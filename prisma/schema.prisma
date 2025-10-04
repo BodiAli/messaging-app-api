@@ -9,14 +9,14 @@ datasource db {
 }
 
 model User {
-  id                     String            @id @default(uuid())
-  username               String            @unique @db.VarChar(100)
+  id                     String          @id @default(uuid())
+  username               String          @unique @db.VarChar(100)
   password               String
   imageUrl               String?
-  sentFriendRequests     Friendship[]      @relation("Sender")
-  receivedFriendRequests Friendship[]      @relation("Receiver")
-  sentMessages           MessagesToUsers[] @relation("Sender")
-  receivedMessages       MessagesToUsers[] @relation("Receiver")
+  sentFriendRequests     Friendship[]    @relation("Sender")
+  receivedFriendRequests Friendship[]    @relation("Receiver")
+  sentMessages           MessageToUser[] @relation("Sender")
+  receivedMessages       MessageToUser[] @relation("Receiver")
   groups                 Group[]
 }
 
@@ -33,15 +33,15 @@ model Friendship {
 }
 
 model Message {
-  id        String            @id @default(uuid())
+  id        String          @id @default(uuid())
   content   String
   imageUrl  String?
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @updatedAt
-  message   MessagesToUsers[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  message   MessageToUser[]
 }
 
-model MessagesToUsers {
+model MessageToUser {
   id         String  @id @default(uuid())
   messageId  String
   message    Message @relation(fields: [messageId], references: [id])
