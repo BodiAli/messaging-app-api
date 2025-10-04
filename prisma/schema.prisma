@@ -17,6 +17,7 @@ model User {
   receivedFriendRequests Friendship[]      @relation("Receiver")
   sentMessages           MessagesToUsers[] @relation("Sender")
   receivedMessages       MessagesToUsers[] @relation("Receiver")
+  groups                 Group[]
 }
 
 model Friendship {
@@ -48,6 +49,12 @@ model MessagesToUsers {
   receiver   User    @relation("Receiver", fields: [receiverId], references: [id])
   senderId   String
   sender     User    @relation("Sender", fields: [senderId], references: [id])
+}
+
+model Group {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  users     User[]
 }
 
 enum FriendStatus {
