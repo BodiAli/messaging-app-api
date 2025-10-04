@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                     String            @id @default(uuid())
+  username               String            @unique @db.VarChar(100)
+  password               String
+  imageUrl               String?
+  sentFriendRequests     Friendship[]      @relation("Sender")
+  receivedFriendRequests Friendship[]      @relation("Receiver")
+  sentMessages           MessagesToUsers[] @relation("Sender")
+  receivedMessages       MessagesToUsers[] @relation("Receiver")
+}
+
+model Friendship {
+  id         String       @id @default(uuid())
+  senderId   String
+  sender     User         @relation("Sender", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User         @relation("Receiver", fields: [receiverId], references: [id])
+  status     FriendStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+
+  @@unique([senderId, receiverId])
+}
+
+model Message {
+  id        String            @id @default(uuid())
+  content   String
+  imageUrl  String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  message   MessagesToUsers[]
+}
+
+model MessagesToUsers {
+  id         String  @id @default(uuid())
+  messageId  String
+  message    Message @relation(fields: [messageId], references: [id])
+  receiverId String
+  receiver   User    @relation("Receiver", fields: [receiverId], references: [id])
+  senderId   String
+  sender     User    @relation("Sender", fields: [senderId], references: [id])
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
