@@ -4,6 +4,6 @@ export default defineConfig({
   test: {
     globals: true,
     fileParallelism: false,
-    setupFiles: "./tests/setup/setup.ts",
+    setupFiles: "./src/tests/setup/setup.ts",
   },
 });
