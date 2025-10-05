@@ -7,7 +7,7 @@ import eslintConfigPrettier from "eslint-config-prettier/flat";
 import { globalIgnores } from "eslint/config";
 
 export default defineConfig([
-  globalIgnores(["dist"]),
+  globalIgnores(["dist", "./src/generated"]),
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
@@ -32,6 +32,7 @@ export default defineConfig([
           argsIgnorePattern: "^_",
         },
       ],
+      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
     },
   },
   eslintConfigPrettier,
