@@ -1,0 +1,1 @@
+TRUNCATE TABLE "User","Notification", "Message", "GroupChat", "_GroupChats", "Friendship"; 
