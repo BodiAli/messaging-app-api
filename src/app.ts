@@ -1,5 +1,5 @@
 import "dotenv/config";
-import express from "express";
+import express, { type NextFunction, type Request, type Response } from "express";
 import authRouter from "./routes/authRouter.js";
 
 const app = express();
@@ -7,6 +7,16 @@ const app = express();
 app.use(express.json());
 
 app.use("/auth", authRouter);
+
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({ error: "Resource not found" });
+});
+
+app.use((error: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(error);
+
+  res.status(500).json({ error: error.message ? error.message : error });
+});
 
 const PORT = process.env["PORT"] ?? 3000;
 
