@@ -9,56 +9,76 @@ datasource db {
 }
 
 model User {
-  id                     String          @id @default(uuid())
-  username               String          @unique @db.VarChar(100)
+  id                     String         @id @default(uuid())
+  username               String         @unique @db.VarChar(100)
   password               String
   imageUrl               String?
-  sentFriendRequests     Friendship[]    @relation("Sender")
-  receivedFriendRequests Friendship[]    @relation("Receiver")
-  sentMessages           MessageToUser[] @relation("Sender")
-  receivedMessages       MessageToUser[] @relation("Receiver")
-  groups                 Group[]
+  lastSeen               DateTime
+  sentFriendRequests     Friendship[]   @relation("FriendRequestSender")
+  receivedFriendRequests Friendship[]   @relation("FriendRequestReceiver")
+  sentMessages           Message[]      @relation("MessageSender")
+  receivedMessages       Message[]      @relation("MessageReceiver")
+  groupChats             GroupChat[]    @relation("GroupChats")
+  groupsAdmin            GroupChat[]    @relation("GroupsAdmin")
+  notifications          Notification[]
 }
 
 model Friendship {
-  id         String       @id @default(uuid())
-  senderId   String
-  sender     User         @relation("Sender", fields: [senderId], references: [id])
-  receiverId String
-  receiver   User         @relation("Receiver", fields: [receiverId], references: [id])
-  status     FriendStatus @default(PENDING)
-  createdAt  DateTime     @default(now())
+  id           String        @id @default(uuid())
+  senderId     String
+  sender       User          @relation("FriendRequestSender", fields: [senderId], references: [id])
+  receiverId   String
+  receiver     User          @relation("FriendRequestReceiver", fields: [receiverId], references: [id])
+  status       FriendStatus  @default(NONE)
+  createdAt    DateTime      @default(now())
+  notification Notification?
 
   @@unique([senderId, receiverId])
 }
 
 model Message {
-  id        String          @id @default(uuid())
-  content   String
-  imageUrl  String?
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  message   MessageToUser[]
+  id          String     @id @default(uuid())
+  content     String
+  imageUrl    String?
+  createdAt   DateTime   @default(now())
+  senderId    String
+  sender      User       @relation("MessageSender", fields: [senderId], references: [id])
+  receiverId  String?
+  receiver    User?      @relation("MessageReceiver", fields: [receiverId], references: [id])
+  groupChatId String?
+  groupChat   GroupChat? @relation(fields: [groupChatId], references: [id])
 }
 
-model MessageToUser {
-  id         String  @id @default(uuid())
-  messageId  String
-  message    Message @relation(fields: [messageId], references: [id])
-  receiverId String
-  receiver   User    @relation("Receiver", fields: [receiverId], references: [id])
-  senderId   String
-  sender     User    @relation("Sender", fields: [senderId], references: [id])
+model GroupChat {
+  id           String        @id @default(uuid())
+  createdAt    DateTime      @default(now())
+  name         String        @db.VarChar(100)
+  adminId      String
+  admin        User          @relation("GroupsAdmin", fields: [adminId], references: [id])
+  users        User[]        @relation("GroupChats")
+  messages     Message[]
+  notification Notification?
 }
 
-model Group {
-  id        String   @id @default(uuid())
-  createdAt DateTime @default(now())
-  users     User[]
+model Notification {
+  id                    String           @id @default(uuid())
+  createdAt             DateTime         @default(now())
+  type                  NotificationType
+  user                  User             @relation(fields: [userId], references: [id])
+  userId                String
+  friendRequestId       String?          @unique
+  friendRequest         Friendship?      @relation(fields: [friendRequestId], references: [id])
+  groupChatInvitationId String?          @unique
+  groupChatInvitation   GroupChat?       @relation(fields: [groupChatInvitationId], references: [id])
 }
 
 enum FriendStatus {
+  NONE
   PENDING
   ACCEPTED
-  REJECTED
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  GROUP_INVITATION
 }
