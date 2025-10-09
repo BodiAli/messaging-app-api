@@ -15,6 +15,7 @@ model User {
   password               String
   imageUrl               String?
   lastSeen               DateTime
+  isGuest                Boolean        @default(false)
   sentFriendRequests     Friendship[]   @relation("FriendRequestSender")
   receivedFriendRequests Friendship[]   @relation("FriendRequestReceiver")
   sentMessages           Message[]      @relation("MessageSender")
