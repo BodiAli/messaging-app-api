@@ -24,16 +24,3 @@ export async function getUserRecordById(id: string) {
 
   return user;
 }
-
-export async function getUserRecordByUsername(username: string) {
-  const user = await prisma.user.findUnique({
-    where: {
-      username,
-    },
-    omit: {
-      password: true,
-    },
-  });
-
-  return user;
-}
