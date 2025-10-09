@@ -19,3 +19,8 @@ export const UserSignUpSchema = z
       path: ["confirmPassword"],
     }
   );
+
+export const UserLogInSchema = z.strictObject({
+  username: z.string("Please provide a string username.").trim().nonempty("Username cannot be empty."),
+  password: z.string("Please provide a string password.").nonempty("Password cannot be empty."),
+});
