@@ -1,26 +1,24 @@
-import type { NextFunction, Request, Response } from "express";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
+import bcrypt from "bcrypt";
 import { createUserRecord } from "../models/userModel.js";
-import { UserSignUpSchema } from "../lib/zodSchemas.js";
+import { Prisma, type User } from "../generated/prisma/index.js";
 import issueJwt from "../lib/issueJwt.js";
-import { Prisma } from "../generated/prisma/index.js";
+import passport from "passport";
 
 export async function createUser(
   req: Request<object, object, { username: string; password: string; confirmPassword: string }>,
   res: Response,
   next: NextFunction
 ) {
-  const result = UserSignUpSchema.safeParse(req.body);
-
-  if (!result.success) {
-    res.status(400).json({ errors: result.error.issues });
-    return;
-  }
-
   try {
-    const createdUser = await createUserRecord(req.body.username, req.body.confirmPassword);
+    const { username, password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const createdUser = await createUserRecord(username, hashedPassword);
     const token = issueJwt(createdUser.id);
 
-    res.json({ token });
+    res.status(201).json({ token, user: createdUser });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (!error.meta) {
@@ -37,4 +35,28 @@ export async function createUser(
     }
     next(error);
   }
+}
+
+export function authenticateUser(req: Request, res: Response, next: NextFunction) {
+  (
+    passport.authenticate(
+      "local",
+      { session: false },
+      (err: unknown, user: User | false, info: { message: string }) => {
+        if (err) {
+          next(err);
+          return;
+        }
+
+        if (!user) {
+          res.status(401).json({ errors: [{ message: info.message }] });
+          return;
+        }
+
+        const token = issueJwt(user.id);
+        const { password: _password, ...userWithoutPassword } = user;
+        res.json({ token, userWithoutPassword });
+      }
+    ) as RequestHandler
+  )(req, res, next);
 }
