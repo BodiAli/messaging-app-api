@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import bcrypt from "bcrypt";
-import { createUserRecord } from "../models/userModel.js";
+import { createUserRecord, getOrCreateUserRecord } from "../models/userModel.js";
 import { Prisma, type User } from "../generated/prisma/index.js";
 import issueJwt from "../lib/issueJwt.js";
 import passport from "passport";
@@ -16,7 +16,7 @@ export async function createUser(
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const createdUser = await createUserRecord(username, hashedPassword);
-    const token = issueJwt(createdUser.id);
+    const token = issueJwt(createdUser.id, "2w");
 
     res.status(201).json({ token, user: createdUser });
   } catch (error) {
@@ -53,10 +53,19 @@ export function authenticateUser(req: Request, res: Response, next: NextFunction
           return;
         }
 
-        const token = issueJwt(user.id);
+        const token = issueJwt(user.id, "2w");
         const { password: _password, ...userWithoutPassword } = user;
-        res.json({ token, userWithoutPassword });
+        res.json({ token, user: userWithoutPassword });
       }
     ) as RequestHandler
   )(req, res, next);
+}
+
+export async function logInAsGuest(_req: Request, res: Response) {
+  const hashedPassword = await bcrypt.hash("guestPassword", 10);
+  const guestUser = await getOrCreateUserRecord("guest-user", hashedPassword);
+
+  const token = issueJwt(guestUser.id, "30m");
+
+  res.json({ token, user: guestUser });
 }
