@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express, { type NextFunction, type Request, type Response } from "express";
 import authRouter from "./routes/authRouter.js";
+import "./config/passportConfig.js";
 
 const app = express();
 
