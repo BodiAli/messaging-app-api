@@ -11,3 +11,29 @@ export async function createUserRecord(username: string, password: string) {
 
   return user;
 }
+
+export async function getUserRecordById(id: string) {
+  const user = await prisma.user.findUnique({
+    where: {
+      id,
+    },
+    omit: {
+      password: true,
+    },
+  });
+
+  return user;
+}
+
+export async function getUserRecordByUsername(username: string) {
+  const user = await prisma.user.findUnique({
+    where: {
+      username,
+    },
+    omit: {
+      password: true,
+    },
+  });
+
+  return user;
+}
