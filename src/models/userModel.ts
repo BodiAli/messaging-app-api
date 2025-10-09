@@ -7,6 +7,9 @@ export async function createUserRecord(username: string, password: string) {
       password,
       username,
     },
+    omit: {
+      password: true,
+    },
   });
 
   return user;
@@ -19,6 +22,16 @@ export async function getUserRecordById(id: string) {
     },
     omit: {
       password: true,
+    },
+  });
+
+  return user;
+}
+
+export async function getUserRecordByUsername(username: string) {
+  const user = await prisma.user.findUnique({
+    where: {
+      username,
     },
   });
 
