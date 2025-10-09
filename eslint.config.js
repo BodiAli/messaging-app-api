@@ -30,6 +30,7 @@ export default defineConfig([
         "error",
         {
           argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
         },
       ],
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
