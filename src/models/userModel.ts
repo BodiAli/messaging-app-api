@@ -1,10 +1,13 @@
+import bcrypt from "bcrypt";
 import prisma from "./prisma.js";
 
 export async function createUserRecord(username: string, password: string) {
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   const user = await prisma.user.create({
     data: {
       lastSeen: new Date(),
-      password,
+      password: hashedPassword,
       username,
     },
     omit: {
@@ -66,4 +69,20 @@ export async function getOrCreateUserRecord(username: string, password: string) 
   });
 
   return guestUser;
+}
+
+export async function updateUserRecordLastSeen(id: string) {
+  const updatedUser = await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      lastSeen: new Date(),
+    },
+    omit: {
+      password: true,
+    },
+  });
+
+  return updatedUser;
 }
