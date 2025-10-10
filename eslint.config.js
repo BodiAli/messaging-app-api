@@ -48,5 +48,10 @@ export default defineConfig([
       "vitest/require-hook": ["error", { allowedFunctionCalls: ["app.use"] }],
       "vitest/no-conditional-in-test": "off",
     },
+    settings: {
+      vitest: {
+        typecheck: true,
+      },
+    },
   },
 ]);
