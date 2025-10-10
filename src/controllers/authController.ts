@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import bcrypt from "bcrypt";
-import { createUserRecord, getOrCreateUserRecord } from "../models/userModel.js";
+import { createUserRecord, getOrCreateUserRecord, updateUserRecordLastSeen } from "../models/userModel.js";
 import { Prisma, type User } from "../generated/prisma/index.js";
 import issueJwt from "../lib/issueJwt.js";
 import passport from "passport";
@@ -13,9 +13,7 @@ export async function createUser(
   try {
     const { username, password } = req.body;
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const createdUser = await createUserRecord(username, hashedPassword);
+    const createdUser = await createUserRecord(username, password);
     const token = issueJwt(createdUser.id, "2w");
 
     res.status(201).json({ token, user: createdUser });
@@ -42,7 +40,7 @@ export function authenticateUser(req: Request, res: Response, next: NextFunction
     passport.authenticate(
       "local",
       { session: false },
-      (err: unknown, user: User | false, info: { message: string }) => {
+      async (err: unknown, user: User | false, info: { message: string }) => {
         if (err) {
           next(err);
           return;
@@ -54,8 +52,10 @@ export function authenticateUser(req: Request, res: Response, next: NextFunction
         }
 
         const token = issueJwt(user.id, "2w");
-        const { password: _password, ...userWithoutPassword } = user;
-        res.json({ token, user: userWithoutPassword });
+
+        const updatedUser = await updateUserRecordLastSeen(user.id);
+
+        res.json({ token, user: updatedUser });
       }
     ) as RequestHandler
   )(req, res, next);
