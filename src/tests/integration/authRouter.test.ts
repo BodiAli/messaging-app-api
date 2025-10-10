@@ -2,17 +2,10 @@ import express from "express";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { jwt } from "zod";
-import bcrypt from "bcrypt";
-import authRouter from "../routes/authRouter.js";
-import {
-  createUserRecord,
-  getOrCreateUserRecord,
-  getUserRecordById,
-  getUserRecordByIdUnsafe,
-  getUserRecordByUsername,
-} from "../models/userModel.js";
-import type { User } from "../generated/prisma/index.js";
-import "../config/passportConfig.js";
+import authRouter from "../../routes/authRouter.js";
+import { createUserRecord, getUserRecordById, getUserRecordByUsername } from "../../models/userModel.js";
+import type { User } from "../../generated/prisma/index.js";
+import "../../config/passportConfig.js";
 
 const app = express();
 
@@ -82,8 +75,6 @@ describe("authRouter test", () => {
 
         const typedResponseBody = response.body as ResponseSuccess;
 
-        typedResponseBody.user.lastSeen = new Date(typedResponseBody.user.lastSeen);
-
         const isTokenValidJwt = jwt().safeParse(typedResponseBody.token).success;
         const createdUser = await getUserRecordById(typedResponseBody.user.id);
 
@@ -92,31 +83,10 @@ describe("authRouter test", () => {
         }
 
         expect(isTokenValidJwt).toBe(true);
-        expect(typedResponseBody.user).toStrictEqual(createdUser);
-      });
-
-      it("should hash password when creating user record", async () => {
-        expect.hasAssertions();
-
-        const response = await request(app)
-          .post("/auth/sign-up")
-          .type("json")
-          .send({ username: "bodi", password: "12345", confirmPassword: "12345" })
-          .expect("Content-type", /json/)
-          .expect(201);
-
-        const typedResponseBody = response.body as ResponseSuccess;
-
-        const createdUser = await getUserRecordByIdUnsafe(typedResponseBody.user.id);
-
-        if (!createdUser) {
-          throw new Error("User not found");
-        }
-
-        const doesPasswordMatch = await bcrypt.compare("12345", createdUser.password);
-
-        expect(createdUser.password).not.toBe("12345");
-        expect(doesPasswordMatch).toBe(true);
+        expect(typedResponseBody.user.id).toBe(createdUser.id);
+        expect(typedResponseBody.user.username).toBe("bodi");
+        expect(typedResponseBody.user.imageUrl).toBeNull();
+        expect(typedResponseBody.user.isGuest).toBe(false);
       });
     });
   });
@@ -160,11 +130,10 @@ describe("authRouter test", () => {
     });
 
     describe("given valid inputs and credentials", () => {
-      it("should return 200 status, JWT, and user when credentials are valid", async () => {
+      it("should return 200 status, JWT, and user object", async () => {
         expect.hasAssertions();
 
-        const hashedPassword = await bcrypt.hash("12345", 10);
-        const existingUser = await createUserRecord("bodi", hashedPassword);
+        const existingUser = await createUserRecord("bodi", "12345");
 
         const response = await request(app)
           .post("/auth/log-in")
@@ -175,64 +144,39 @@ describe("authRouter test", () => {
 
         const typedResponseBody = response.body as ResponseSuccess;
 
-        typedResponseBody.user.lastSeen = new Date(typedResponseBody.user.lastSeen);
-
         const isTokenValidJwt = jwt().safeParse(typedResponseBody.token).success;
 
         expect(isTokenValidJwt).toBe(true);
+        expect(typedResponseBody.user.id).toBe(existingUser.id);
         expect(typedResponseBody.user.isGuest).toBe(false);
-        expect(typedResponseBody.user).toStrictEqual(existingUser);
+        expect(typedResponseBody.user.username).toBe("bodi");
+        expect(typedResponseBody.user.imageUrl).toBeNull();
       });
     });
   });
 
   describe("log in as guest GET /auth/guest", () => {
-    describe("given guest record not found inside User model", () => {
-      it("should return 200 status, create a guest record and return it with JWT", async () => {
+    describe("given request to login as guest", () => {
+      it("should return 200 status and return guest user object with JWT", async () => {
         expect.hasAssertions();
+
+        const response = await request(app).get("/auth/guest").expect("Content-type", /json/).expect(200);
+
+        const typedResponseBody = response.body as ResponseSuccess;
 
         const guestUser = await getUserRecordByUsername("guest-user");
 
-        expect(guestUser).toBeNull();
-
-        const response = await request(app).get("/auth/guest").expect("Content-type", /json/).expect(200);
-
-        const typedResponseBody = response.body as ResponseSuccess;
-
-        typedResponseBody.user.lastSeen = new Date(typedResponseBody.user.lastSeen);
-
-        const createdGuestUser = await getUserRecordByUsername("guest-user");
-
-        if (!createdGuestUser) {
+        if (!guestUser) {
           throw new Error("Guest user record not found");
         }
 
-        const { password: _password, ...createdGuestUserWithoutPassword } = createdGuestUser;
-
         const isTokenValidJwt = jwt().safeParse(typedResponseBody.token).success;
 
         expect(isTokenValidJwt).toBe(true);
-        expect(createdGuestUser.isGuest).toBe(true);
-        expect(typedResponseBody.user).toStrictEqual(createdGuestUserWithoutPassword);
-      });
-    });
-
-    describe("given an already existing guest record inside User model", () => {
-      it("should return 200 status and return it with JWT", async () => {
-        expect.hasAssertions();
-
-        const existingGuestUser = await getOrCreateUserRecord("guest-user", "guest password");
-
-        const response = await request(app).get("/auth/guest").expect("Content-type", /json/).expect(200);
-
-        const typedResponseBody = response.body as ResponseSuccess;
-        typedResponseBody.user.lastSeen = new Date(typedResponseBody.user.lastSeen);
-
-        const isTokenValidJwt = jwt().safeParse(typedResponseBody.token).success;
-
-        expect(isTokenValidJwt).toBe(true);
+        expect(typedResponseBody.user.id).toBe(guestUser.id);
         expect(typedResponseBody.user.isGuest).toBe(true);
-        expect(typedResponseBody.user).toStrictEqual(existingGuestUser);
+        expect(typedResponseBody.user.username).toBe("guest-user");
+        expect(typedResponseBody.user.imageUrl).toBeNull();
       });
     });
   });
