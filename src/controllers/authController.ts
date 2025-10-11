@@ -1,6 +1,6 @@
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 import bcrypt from "bcrypt";
-import { createUserRecord, getOrCreateUserRecord, updateUserRecordLastSeen } from "../models/userModel.js";
+import * as userModel from "../models/userModel.js";
 import { Prisma, type User } from "../generated/prisma/index.js";
 import issueJwt from "../lib/issueJwt.js";
 import passport from "passport";
@@ -13,7 +13,7 @@ export async function createUser(
   try {
     const { username, password } = req.body;
 
-    const createdUser = await createUserRecord(username, password);
+    const createdUser = await userModel.createUserRecord(username, password);
     const token = issueJwt(createdUser.id, "2w");
 
     res.status(201).json({ token, user: createdUser });
@@ -53,7 +53,7 @@ export function authenticateUser(req: Request, res: Response, next: NextFunction
 
         const token = issueJwt(user.id, "2w");
 
-        const updatedUser = await updateUserRecordLastSeen(user.id);
+        const updatedUser = await userModel.updateUserRecordLastSeen(user.id);
 
         res.json({ token, user: updatedUser });
       }
@@ -63,7 +63,7 @@ export function authenticateUser(req: Request, res: Response, next: NextFunction
 
 export async function logInAsGuest(_req: Request, res: Response) {
   const hashedPassword = await bcrypt.hash("guestPassword", 10);
-  const guestUser = await getOrCreateUserRecord("guest-user", hashedPassword);
+  const guestUser = await userModel.getOrCreateUserRecord("guest-user", hashedPassword);
 
   const token = issueJwt(guestUser.id, "30m");
 
