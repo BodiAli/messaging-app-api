@@ -1,11 +1,11 @@
-import { Router, type RequestHandler } from "express";
+import { Router } from "express";
 import passport from "passport";
 import * as usersController from "../controllers/usersController.js";
 
 const usersRouter = Router();
 
-usersRouter.use(passport.authenticate("jwt") as RequestHandler);
+usersRouter.use(passport.authenticate("jwt", { session: false }));
 
-usersRouter.get("/friends", usersController.getUserFriends);
+usersRouter.get("/me/friends", usersController.getUserFriends);
 
 export default usersRouter;
