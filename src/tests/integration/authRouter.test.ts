@@ -22,7 +22,7 @@ interface ResponseSuccess {
   user: User;
 }
 
-describe("authRouter test", () => {
+describe("authRouter routes", () => {
   describe("create user POST /auth/sign-up", () => {
     describe("given invalid inputs", () => {
       it("should return 400 status and error messages", async () => {
@@ -37,9 +37,17 @@ describe("authRouter test", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors[0]?.message).toBe("Username cannot be empty.");
-        expect(typedResponseBody.errors[1]?.message).toBe("Password must be at least 5 characters.");
-        expect(typedResponseBody.errors[2]?.message).toBe("Passwords do not match.");
+        expect(typedResponseBody.errors).toStrictEqual([
+          expect.objectContaining({
+            message: "Username cannot be empty.",
+          }),
+          expect.objectContaining({
+            message: "Password must be at least 5 characters.",
+          }),
+          expect.objectContaining({
+            message: "Passwords do not match.",
+          }),
+        ]);
       });
     });
 
@@ -58,7 +66,11 @@ describe("authRouter test", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors[0]?.message).toBe("A user with this username already exists.");
+        expect(typedResponseBody.errors).toStrictEqual([
+          {
+            message: "A user with this username already exists.",
+          },
+        ]);
       });
     });
 
