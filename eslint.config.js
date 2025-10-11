@@ -47,6 +47,7 @@ export default defineConfig([
       "@typescript-eslint/unbound-method": "off",
       "vitest/require-hook": ["error", { allowedFunctionCalls: ["app.use"] }],
       "vitest/no-conditional-in-test": "off",
+      "vitest/no-hooks": ["error", { allow: ["beforeEach"] }],
     },
     settings: {
       vitest: {
