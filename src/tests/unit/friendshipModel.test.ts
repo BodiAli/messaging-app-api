@@ -66,6 +66,23 @@ describe("friendshipModel Queries", () => {
     });
   });
 
+  describe(friendshipModel.deleteFriendRequest, () => {
+    it("should delete friend request", async () => {
+      expect.hasAssertions();
+
+      const bodi = await userModel.createUserRecord("bodi", "12345");
+      const john = await userModel.createUserRecord("john", "12345");
+
+      const friendRequest = await friendshipModel.sendFriendRequest(john.id, bodi.id);
+
+      await friendshipModel.deleteFriendRequest(friendRequest.id);
+
+      const doesNotExistFriendRequest = await friendshipModel.getFriendRequestRecord(bodi.id, john.id);
+
+      expect(doesNotExistFriendRequest).toBeNull();
+    });
+  });
+
   describe(friendshipModel.getUserFriends, () => {
     let bodi: Omit<User, "password">;
     let john: Omit<User, "password">;
