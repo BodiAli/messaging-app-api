@@ -48,7 +48,7 @@ describe("friendshipsRouter routes", () => {
   });
 
   describe("create friend request POST /friendships", () => {
-    describe("given john sent a friend request to bodi", () => {
+    describe("given userA sent a friend request to userB", () => {
       it("should return 409 when bodi tries to send a friend request to john", async () => {
         expect.hasAssertions();
 
@@ -63,26 +63,53 @@ describe("friendshipsRouter routes", () => {
           .auth(johnToken, { type: "bearer" })
           .type("json")
           .send({
-            senderId: johnUser.id,
             receiverId: bodiUser.id,
           })
           .expect("Content-type", /json/)
           .expect(201);
 
-        const typedResponseBody = johnResponse.body as { message: string };
+        const typedJohnBody = johnResponse.body as { message: string };
 
-        expect(typedResponseBody.message).toBe("Friend request sent to bodi");
+        expect(typedJohnBody.message).toBe("Friend request sent to bodi");
 
         const bodiResponse = await request(app)
           .post("/friendships")
           .auth(bodiToken, { type: "bearer" })
           .type("json")
           .send({
-            senderId: bodiUser.id,
             receiverId: johnUser.id,
           })
           .expect("Content-type", /json/)
           .expect(409);
+
+        const typedBodiBody = bodiResponse.body as ResponseError;
+
+        expect(typedBodiBody).toStrictEqual({
+          errors: ["A friend request is already sent by john"],
+        });
+      });
+
+      it("should return 201 status with message", async () => {
+        expect.hasAssertions();
+
+        const clareUser = await userModel.createUserRecord("clare", "12345");
+        const johnUser = await userModel.createUserRecord("john", "12345");
+
+        const johnToken = issueJwt(johnUser.id, "10m");
+
+        const johnResponse = await request(app)
+          .post("/friendships")
+          .auth(johnToken, { type: "bearer" })
+          .type("json")
+          .send({
+            receiverId: clareUser.id,
+          })
+          .expect("Content-type", /json/)
+          .expect(201);
+
+        const typedJohnBody = johnResponse.body as { message: string };
+
+        expect(typedJohnBody.message).toBe("Friend request sent to clare");
       });
     });
   });
