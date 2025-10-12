@@ -4,6 +4,27 @@ import * as userModel from "../../models/userModel.js";
 import type { User } from "../../generated/prisma/index.js";
 
 describe("friendshipModel Queries", () => {
+  describe(friendshipModel.getFriendRequestRecord, () => {
+    it("should return friend request by providing sender and receiver ids", async () => {
+      expect.hasAssertions();
+
+      const bodi = await userModel.createUserRecord("bodi", "12345");
+      const john = await userModel.createUserRecord("john", "12345");
+
+      await friendshipModel.sendFriendRequest(john.id, bodi.id);
+
+      const friendRequest = await friendshipModel.getFriendRequestRecord(john.id, bodi.id);
+
+      if (!friendRequest) {
+        throw new Error("Friend request not found");
+      }
+
+      expect(friendRequest.senderId).toBe(john.id);
+      expect(friendRequest.receiverId).toBe(bodi.id);
+      expect(friendRequest.status).toBe("PENDING");
+    });
+  });
+
   describe(friendshipModel.sendFriendRequest, () => {
     it("should send a friend request to the expected user", async () => {
       expect.hasAssertions();
