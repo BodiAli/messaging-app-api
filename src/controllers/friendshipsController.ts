@@ -1,4 +1,5 @@
 import type { Request, Response } from "express";
+import { Prisma } from "../generated/prisma/index.js";
 import * as friendshipModel from "../models/friendshipModel.js";
 import * as userModel from "../models/userModel.js";
 
@@ -31,4 +32,50 @@ export async function createFriendRequest(
   }
 
   res.status(201).json({ message: `Friend request sent to ${receiverRecord.username}` });
+}
+
+export async function deleteFriendRequest(req: Request<{ id: string }>, res: Response) {
+  const { id } = req.params;
+
+  try {
+    await friendshipModel.deleteFriendRequest(id);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (!error.meta || error.code !== "P2025") {
+        throw error;
+      }
+
+      const cause = error.meta["cause"];
+
+      res.status(404).json({ errors: [cause] });
+      return;
+    }
+
+    throw error;
+  }
+
+  res.sendStatus(204);
+}
+
+export async function updateFriendRequest(req: Request<{ id: string }>, res: Response) {
+  const { id } = req.params;
+
+  try {
+    await friendshipModel.acceptFriendRequest(id);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (!error.meta || error.code !== "P2025") {
+        throw error;
+      }
+
+      const cause = error.meta["cause"];
+
+      res.status(404).json({ errors: [cause] });
+      return;
+    }
+
+    throw error;
+  }
+
+  res.sendStatus(204);
 }
