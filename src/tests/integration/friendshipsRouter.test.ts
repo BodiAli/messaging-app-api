@@ -4,6 +4,7 @@ import request from "supertest";
 import friendshipsRouter from "../../routes/friendshipsRouter.js";
 import issueJwt from "../../lib/issueJwt.js";
 import * as userModel from "../../models/userModel.js";
+import * as friendshipModel from "../../models/friendshipModel.js";
 import "../../config/passportConfig.js";
 
 const app = express();
@@ -110,6 +111,90 @@ describe("friendshipsRouter routes", () => {
         const typedJohnBody = johnResponse.body as { message: string };
 
         expect(typedJohnBody.message).toBe("Friend request sent to clare");
+      });
+    });
+  });
+
+  describe("reject friend request DELETE /friendships/:id", () => {
+    describe("given userA rejecting userB's friend request", () => {
+      it("should return 404 when friend request id param is invalid", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        await friendshipModel.sendFriendRequest(userB.id, userA.id);
+
+        const response = await request(app)
+          .delete("/friendships/123")
+          .auth(userAToken, { type: "bearer" })
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual(["No record was found for a delete."]);
+      });
+
+      it("should return 204 status when friend request id param is valid", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const friendRequest = await friendshipModel.sendFriendRequest(userB.id, userA.id);
+
+        const response = await request(app)
+          .delete(`/friendships/${friendRequest.id}`)
+          .auth(userAToken, { type: "bearer" })
+          .expect(204);
+
+        expect(response.noContent).toBe(true);
+      });
+    });
+  });
+
+  describe("accept friend request PATCH /friendships/:id", () => {
+    describe("given userA accepting userB's friend request", () => {
+      it("should return 404 when friend request id param is invalid", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        await friendshipModel.sendFriendRequest(userB.id, userA.id);
+
+        const response = await request(app)
+          .patch("/friendships/123")
+          .auth(userAToken, { type: "bearer" })
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual(["No record was found for an update."]);
+      });
+
+      it("should return 204 status when friend request id param is valid", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const friendRequest = await friendshipModel.sendFriendRequest(userB.id, userA.id);
+
+        const response = await request(app)
+          .patch(`/friendships/${friendRequest.id}`)
+          .auth(userAToken, { type: "bearer" })
+          .expect(204);
+
+        expect(response.noContent).toBe(true);
       });
     });
   });
