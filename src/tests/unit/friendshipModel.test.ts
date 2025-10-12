@@ -5,7 +5,7 @@ import type { User } from "../../generated/prisma/index.js";
 
 describe("friendshipModel Queries", () => {
   describe(friendshipModel.getFriendRequestRecord, () => {
-    it("should return friend request by providing sender and receiver ids", async () => {
+    it("should return friend request by providing sender and receiver ids in no particular order", async () => {
       expect.hasAssertions();
 
       const bodi = await userModel.createUserRecord("bodi", "12345");
@@ -13,15 +13,24 @@ describe("friendshipModel Queries", () => {
 
       await friendshipModel.sendFriendRequest(john.id, bodi.id);
 
-      const friendRequest = await friendshipModel.getFriendRequestRecord(john.id, bodi.id);
+      const existingFriendRequest1 = await friendshipModel.getFriendRequestRecord(john.id, bodi.id);
+      const existingFriendRequest2 = await friendshipModel.getFriendRequestRecord(bodi.id, john.id);
 
-      if (!friendRequest) {
+      if (!existingFriendRequest1 || !existingFriendRequest2) {
         throw new Error("Friend request not found");
       }
 
-      expect(friendRequest.senderId).toBe(john.id);
-      expect(friendRequest.receiverId).toBe(bodi.id);
-      expect(friendRequest.status).toBe("PENDING");
+      expect(existingFriendRequest1).toMatchObject({
+        status: "PENDING",
+        receiverId: bodi.id,
+        senderId: john.id,
+      });
+
+      expect(existingFriendRequest2).toMatchObject({
+        status: "PENDING",
+        receiverId: bodi.id,
+        senderId: john.id,
+      });
     });
   });
 
