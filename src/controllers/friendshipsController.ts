@@ -1,13 +1,18 @@
 import type { Request, Response } from "express";
 import * as friendshipModel from "../models/friendshipModel.js";
+import * as userModel from "../models/userModel.js";
 
 export async function createFriendRequest(
-  req: Request<object, object, { senderId: string; receiverId: string }>,
+  req: Request<object, object, { receiverId: string }>,
   res: Response
 ) {
-  const { receiverId, senderId } = req.body;
+  if (!req.user) {
+    throw new Error("User undefined");
+  }
 
-  const existingFriendRequest = await friendshipModel.getFriendRequestRecord(senderId, receiverId);
+  const { receiverId } = req.body;
+
+  const existingFriendRequest = await friendshipModel.getFriendRequestRecord(req.user.id, receiverId);
 
   if (existingFriendRequest) {
     res
@@ -17,7 +22,13 @@ export async function createFriendRequest(
     return;
   }
 
-  // await friendshipModel.sendFriendRequest();
+  await friendshipModel.sendFriendRequest(req.user.id, receiverId);
 
-  res.status(201).json({ message: "Friend request sent to bodi" });
+  const receiverRecord = await userModel.getUserRecordById(receiverId);
+
+  if (!receiverRecord) {
+    throw new Error("Receiver not found");
+  }
+
+  res.status(201).json({ message: `Friend request sent to ${receiverRecord.username}` });
 }
