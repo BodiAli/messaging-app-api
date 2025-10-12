@@ -1,5 +1,25 @@
 import prisma from "./prisma.js";
 
+export async function getFriendRequestRecord(senderId: string, receiverId: string) {
+  const friendRequest = await prisma.friendship.findUnique({
+    where: {
+      senderId_receiverId: {
+        receiverId,
+        senderId,
+      },
+    },
+    include: {
+      sender: {
+        select: {
+          username: true,
+        },
+      },
+    },
+  });
+
+  return friendRequest;
+}
+
 export async function sendFriendRequest(senderId: string, receiverId: string) {
   const friendship = await prisma.friendship.create({
     data: {
@@ -10,7 +30,7 @@ export async function sendFriendRequest(senderId: string, receiverId: string) {
         },
       },
       senderId,
-      receiverId: receiverId,
+      receiverId,
       status: "PENDING",
     },
   });
