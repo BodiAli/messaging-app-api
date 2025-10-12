@@ -1,21 +1,37 @@
 import prisma from "./prisma.js";
 
-export async function getFriendRequestRecord(senderId: string, receiverId: string) {
-  const friendRequest = await prisma.friendship.findUnique({
-    where: {
-      senderId_receiverId: {
-        receiverId,
-        senderId,
-      },
-    },
-    include: {
-      sender: {
-        select: {
-          username: true,
+export async function getFriendRequestRecord(userAId: string, userBId: string) {
+  const friendRequest =
+    (await prisma.friendship.findUnique({
+      where: {
+        senderId_receiverId: {
+          receiverId: userAId,
+          senderId: userBId,
         },
       },
-    },
-  });
+      include: {
+        sender: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    })) ??
+    (await prisma.friendship.findUnique({
+      where: {
+        senderId_receiverId: {
+          receiverId: userBId,
+          senderId: userAId,
+        },
+      },
+      include: {
+        sender: {
+          select: {
+            username: true,
+          },
+        },
+      },
+    }));
 
   return friendRequest;
 }
