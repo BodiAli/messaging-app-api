@@ -67,6 +67,14 @@ export async function acceptFriendRequest(friendRequestId: string) {
   return friendship;
 }
 
+export async function deleteFriendRequest(friendRequestId: string) {
+  await prisma.friendship.delete({
+    where: {
+      id: friendRequestId,
+    },
+  });
+}
+
 export async function getUserFriends(id: string) {
   const user = await prisma.user.findUnique({
     where: {
