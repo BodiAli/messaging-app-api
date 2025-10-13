@@ -69,9 +69,9 @@ model Notification {
   user                  User             @relation(fields: [userId], references: [id])
   userId                String
   friendRequestId       String?          @unique
-  friendRequest         Friendship?      @relation(fields: [friendRequestId], references: [id])
+  friendRequest         Friendship?      @relation(fields: [friendRequestId], references: [id], onDelete: Cascade)
   groupChatInvitationId String?          @unique
-  groupChatInvitation   GroupChat?       @relation(fields: [groupChatInvitationId], references: [id])
+  groupChatInvitation   GroupChat?       @relation(fields: [groupChatInvitationId], references: [id], onDelete: Cascade)
 }
 
 enum FriendStatus {
