@@ -3,6 +3,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import authRouter from "./routes/authRouter.js";
 import usersRouter from "./routes/usersRouter.js";
 import friendshipsRouter from "./routes/friendshipsRouter.js";
+import notificationsRouter from "./routes/notificationsRouter.js";
 import "./config/passportConfig.js";
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(express.json());
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 app.use("/friendships", friendshipsRouter);
+app.use("/notifications", notificationsRouter);
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: "Resource not found" });
