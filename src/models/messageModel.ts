@@ -16,3 +16,22 @@ export async function sendMessageFromUserToUSer(
 
   return message;
 }
+
+export async function getMessagesBetweenTwoUsers(userAId: string, userBId: string) {
+  const messages = await prisma.message.findMany({
+    where: {
+      OR: [
+        {
+          receiverId: userAId,
+          senderId: userBId,
+        },
+        {
+          receiverId: userBId,
+          senderId: userAId,
+        },
+      ],
+    },
+  });
+
+  return messages;
+}
