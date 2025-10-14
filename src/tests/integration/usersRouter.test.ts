@@ -3,9 +3,10 @@ import express from "express";
 import request from "supertest";
 import usersRouter from "../../routes/usersRouter.js";
 import issueJwt from "../../lib/issueJwt.js";
-import type { User } from "../../generated/prisma/index.js";
+import type { Message, User } from "../../generated/prisma/index.js";
 import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
+import * as messageModel from "../../models/messageModel.js";
 import "../../config/passportConfig.js";
 
 const app = express();
@@ -125,6 +126,109 @@ describe("usersRouter routes", () => {
           }),
         ]);
       });
+    });
+  });
+
+  describe("get current user's messages with another user GET /users/:id/messages", () => {
+    describe("given invalid user id as param", () => {
+      it("should return 200 status with empty messages array", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        await messageModel.sendMessageFromUserToUser(userB.id, userA.id, {
+          content: "Hello from userB to userA",
+          imageUrl: null,
+        });
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .get("/users/invalidParam/messages")
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as { messages: Message[] };
+
+        expect(typedResponseBody.messages).toHaveLength(0);
+      });
+    });
+
+    describe("given valid user id as param", () => {
+      it("should return 200 status with messages array", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        await messageModel.sendMessageFromUserToUser(userB.id, userA.id, {
+          content: "Hello from userB to userA",
+          imageUrl: null,
+        });
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .get(`/users/${userB.id}/messages`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as { messages: Message[] };
+
+        expect(typedResponseBody.messages).toStrictEqual([
+          {
+            id: expect.any(String) as string,
+            imageUrl: null,
+            content: "Hello from userB to userA",
+            createdAt: expect.any(String) as string,
+            senderId: userB.id,
+            receiverId: userA.id,
+            groupChatId: null,
+          },
+        ]);
+      });
+
+      it("should return the exact array regardless of which user is making the request", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        await messageModel.sendMessageFromUserToUser(userB.id, userA.id, {
+          content: "Hello from userB to userA",
+          imageUrl: null,
+        });
+
+        const userAToken = issueJwt(userA.id, "10m");
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const response1 = await request(app)
+          .get(`/users/${userB.id}/messages`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody1 = response1.body as { messages: Message[] };
+
+        const response2 = await request(app)
+          .get(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody2 = response2.body as { messages: Message[] };
+
+        expect(typedResponseBody1.messages).toStrictEqual(typedResponseBody2.messages);
+      });
+    });
+  });
+
+  describe("create message POST /users/:id/messages", () => {
+    describe("given not existing user id as param", () => {
+      it.todo("should return 404 status with messages", async () => {});
     });
   });
 });
