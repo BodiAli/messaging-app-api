@@ -36,7 +36,7 @@ describe("messageModal queries", () => {
   });
 
   describe(messageModal.getMessagesBetweenTwoUsers, () => {
-    it("should return an array of messages between userA and userB by providing userA and userB ids regardless of order", async () => {
+    it("should return an array of messages between userA and userB when providing userA and userB ids regardless of order", async () => {
       expect.hasAssertions();
 
       const userA = await userModel.createUserRecord("userA", "12345");
