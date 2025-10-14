@@ -1,6 +1,6 @@
 import prisma from "./prisma.js";
 
-export async function sendMessageFromUserToUSer(
+export async function sendMessageFromUserToUser(
   senderId: string,
   receiverId: string,
   { content, imageUrl }: { content: string; imageUrl: string | null }

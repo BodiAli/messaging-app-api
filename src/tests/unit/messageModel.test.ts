@@ -3,19 +3,19 @@ import * as userModel from "../../models/userModel.js";
 import * as messageModal from "../../models/messageModel.js";
 
 describe("messageModal queries", () => {
-  describe(messageModal.sendMessageFromUserToUSer, () => {
+  describe(messageModal.sendMessageFromUserToUser, () => {
     it("should create a message by userA to userB", async () => {
       expect.hasAssertions();
 
       const userA = await userModel.createUserRecord("userA", "12345");
       const userB = await userModel.createUserRecord("userB", "12345");
 
-      const message1 = await messageModal.sendMessageFromUserToUSer(userA.id, userB.id, {
+      const message1 = await messageModal.sendMessageFromUserToUser(userA.id, userB.id, {
         content: "Hello from userA to userB",
         imageUrl: null,
       });
 
-      const message2 = await messageModal.sendMessageFromUserToUSer(userA.id, userB.id, {
+      const message2 = await messageModal.sendMessageFromUserToUser(userA.id, userB.id, {
         content: "Hello again!",
         imageUrl: "exampleUrl",
       });
@@ -42,12 +42,12 @@ describe("messageModal queries", () => {
       const userA = await userModel.createUserRecord("userA", "12345");
       const userB = await userModel.createUserRecord("userB", "12345");
 
-      await messageModal.sendMessageFromUserToUSer(userA.id, userB.id, {
+      await messageModal.sendMessageFromUserToUser(userA.id, userB.id, {
         content: "Hello from userA to userB",
         imageUrl: null,
       });
 
-      await messageModal.sendMessageFromUserToUSer(userA.id, userB.id, {
+      await messageModal.sendMessageFromUserToUser(userA.id, userB.id, {
         content: "Hello again!",
         imageUrl: "exampleUrl",
       });
