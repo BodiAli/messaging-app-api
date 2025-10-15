@@ -3,6 +3,7 @@ import express from "express";
 import request from "supertest";
 import friendshipsRouter from "../../routes/friendshipsRouter.js";
 import issueJwt from "../../lib/issueJwt.js";
+import type ResponseError from "../../types/responseError.js";
 import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import "../../config/passportConfig.js";
@@ -12,10 +13,6 @@ const app = express();
 app.use(express.json());
 
 app.use("/friendships", friendshipsRouter);
-
-interface ResponseError {
-  errors: { message: string }[];
-}
 
 describe("friendshipsRouter routes", () => {
   describe("all requests for /friendships path", () => {
@@ -134,7 +131,7 @@ describe("friendshipsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual(["No record was found for a delete."]);
+        expect(typedResponseBody.errors).toStrictEqual([{ message: "No record was found for a delete." }]);
       });
 
       it("should return 204 status when friend request id param is valid", async () => {
@@ -176,7 +173,7 @@ describe("friendshipsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual(["No record was found for an update."]);
+        expect(typedResponseBody.errors).toStrictEqual([{ message: "No record was found for an update." }]);
       });
 
       it("should return 204 status when friend request id param is valid", async () => {

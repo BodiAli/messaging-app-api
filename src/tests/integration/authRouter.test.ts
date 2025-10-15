@@ -2,9 +2,10 @@ import express from "express";
 import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { jwt } from "zod";
+import type { User } from "../../generated/prisma/index.js";
+import type ResponseError from "../../types/responseError.js";
 import authRouter from "../../routes/authRouter.js";
 import { createUserRecord, getUserRecordById, getUserRecordByUsername } from "../../models/userModel.js";
-import type { User } from "../../generated/prisma/index.js";
 import "../../config/passportConfig.js";
 
 const app = express();
@@ -12,10 +13,6 @@ const app = express();
 app.use(express.json());
 
 app.use("/auth", authRouter);
-
-interface ResponseError {
-  errors: { message: string }[];
-}
 
 interface ResponseSuccess {
   token: string;
