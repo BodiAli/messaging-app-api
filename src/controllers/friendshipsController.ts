@@ -47,7 +47,7 @@ export async function deleteFriendRequest(req: Request<{ id: string }>, res: Res
 
       const cause = error.meta["cause"];
 
-      res.status(404).json({ errors: [cause] });
+      res.status(404).json({ errors: [{ message: cause }] });
       return;
     }
 
@@ -70,7 +70,7 @@ export async function updateFriendRequest(req: Request<{ id: string }>, res: Res
 
       const cause = error.meta["cause"];
 
-      res.status(404).json({ errors: [cause] });
+      res.status(404).json({ errors: [{ message: cause }] });
       return;
     }
 
