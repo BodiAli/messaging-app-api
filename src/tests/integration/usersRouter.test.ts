@@ -4,6 +4,7 @@ import request from "supertest";
 import usersRouter from "../../routes/usersRouter.js";
 import issueJwt from "../../lib/issueJwt.js";
 import type { Message, User } from "../../generated/prisma/index.js";
+import type ResponseError from "../../types/responseError.js";
 import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import * as messageModel from "../../models/messageModel.js";
@@ -77,10 +78,12 @@ describe("usersRouter routes", () => {
           expect.objectContaining({
             id: johnUser.id,
             username: "john",
+            lastSeen: expect.any(String) as string,
           }),
           expect.objectContaining({
             id: clareUser.id,
             username: "clare",
+            lastSeen: expect.any(String) as string,
           }),
         ]);
       });
@@ -102,6 +105,7 @@ describe("usersRouter routes", () => {
           expect.objectContaining({
             id: bodiUser.id,
             username: "bodi",
+            lastSeen: expect.any(String) as string,
           }),
         ]);
       });
@@ -123,6 +127,7 @@ describe("usersRouter routes", () => {
           expect.objectContaining({
             id: bodiUser.id,
             username: "bodi",
+            lastSeen: expect.any(String) as string,
           }),
         ]);
       });
@@ -228,7 +233,33 @@ describe("usersRouter routes", () => {
 
   describe("create message POST /users/:id/messages", () => {
     describe("given not existing user id as param", () => {
-      it.todo("should return 404 status with messages", async () => {});
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const response = await request(app)
+          .post("/users/notExistingId/messages")
+          .auth(userBToken, { type: "bearer" })
+          .type("json")
+          .send({ messageContent: "Hello from userB to userA" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual([
+          {
+            message: "Cannot find user to send message to.",
+          },
+        ]);
+      });
+    });
+
+    describe("given invalid message inputs", () => {
+      it.todo("should return 400 when message image is more than 5MB");
     });
   });
 });
