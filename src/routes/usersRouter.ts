@@ -9,4 +9,6 @@ usersRouter.use(passport.authenticate("jwt", { session: false }));
 usersRouter.get("/me/friends", usersController.getUserFriends);
 usersRouter.get("/:id/messages", usersController.getTwoUsersMessages);
 
+usersRouter.post("/:id/messages", usersController.createMessage);
+
 export default usersRouter;
