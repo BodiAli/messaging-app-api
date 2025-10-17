@@ -24,3 +24,7 @@ export const UserLogInSchema = z.strictObject({
   username: z.string("Please provide a string username.").trim().nonempty("Username cannot be empty."),
   password: z.string("Please provide a string password.").nonempty("Password cannot be empty."),
 });
+
+export const CreateMessageSchema = z.strictObject({
+  messageContent: z.string("Please provide a string content").trim().nonempty("Message cannot be empty"),
+});
