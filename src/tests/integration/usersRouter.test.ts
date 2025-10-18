@@ -1,6 +1,8 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, vi } from "vitest";
 import express from "express";
 import request from "supertest";
+import type { UploadStream, UploadApiOptions, UploadApiResponse, UploadResponseCallback } from "cloudinary";
+import cloudinary from "../../config/cloudinaryConfig.js";
 import usersRouter from "../../routes/usersRouter.js";
 import issueJwt from "../../lib/issueJwt.js";
 import type { Message, User } from "../../generated/prisma/index.js";
@@ -15,6 +17,26 @@ const app = express();
 app.use(express.json());
 
 app.use("/users", usersRouter);
+
+vi.mock(import("../../config/cloudinaryConfig.js"), () => {
+  return {
+    default: {
+      uploader: {
+        upload_stream: vi.fn<(arg1?: UploadApiOptions, arg2?: UploadResponseCallback) => UploadStream>(
+          (_options?: UploadApiOptions, cb?: UploadResponseCallback) => {
+            return {
+              end: () => {
+                if (cb) {
+                  cb(undefined, { secure_url: "imageUrl" } as UploadApiResponse);
+                }
+              },
+            } as UploadStream;
+          }
+        ) as typeof cloudinary.uploader.upload_stream,
+      },
+    } as typeof cloudinary,
+  };
+});
 
 describe("usersRouter routes", () => {
   describe("all requests for /users path", () => {
@@ -336,7 +358,7 @@ describe("usersRouter routes", () => {
     });
 
     describe("given valid message inputs", () => {
-      it("messageImage should be optional", async () => {
+      it("should successfully create message when messageImage does not exist", async () => {
         expect.hasAssertions();
 
         const userA = await userModel.createUserRecord("userA", "12345");
@@ -347,10 +369,22 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .field("messageContent", "Hello from userB to user A")
+          .field("messageContent", "Hello from userB to userA")
+          .expect("Content-type", /json/)
           .expect(201);
 
+        const typedResponseBody = response.body as { message: Message };
+
         expect(response.ok).toBe(true);
+        expect(typedResponseBody.message).toStrictEqual({
+          id: expect.any(String) as string,
+          content: "Hello from userB to userA",
+          imageUrl: null,
+          createdAt: expect.any(String) as string,
+          senderId: userB.id,
+          receiverId: userA.id,
+          groupChatId: null,
+        });
       });
 
       it("should return 201 status when messageContent and messageImage (if present) are valid", async () => {
@@ -367,15 +401,27 @@ describe("usersRouter routes", () => {
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
           .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
-          .field("messageContent", "Hello from userB to user A")
+          .field("messageContent", "Hello from userB to userA")
+          .expect("Content-type", /json/)
           .expect(201);
 
+        const typedResponseBody = response.body as { message: Message };
+
         expect(response.ok).toBe(true);
+        expect(typedResponseBody.message).toStrictEqual({
+          id: expect.any(String) as string,
+          content: "Hello from userB to userA",
+          imageUrl: "imageUrl",
+          createdAt: expect.any(String) as string,
+          senderId: userB.id,
+          receiverId: userA.id,
+          groupChatId: null,
+        });
       });
     });
 
     describe("given two users are friends", () => {
-      it("should send message successfully", async () => {
+      it("should successfully send message", async () => {
         expect.hasAssertions();
 
         const userA = await userModel.createUserRecord("userA", "12345");
@@ -393,15 +439,27 @@ describe("usersRouter routes", () => {
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
           .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
-          .field("messageContent", "Hello from userB to user A")
+          .field("messageContent", "Hello from userB to userA")
+          .expect("Content-type", /json/)
           .expect(201);
 
+        const typedResponseBody = response.body as { message: Message };
+
         expect(response.ok).toBe(true);
+        expect(typedResponseBody.message).toStrictEqual({
+          id: expect.any(String) as string,
+          content: "Hello from userB to userA",
+          imageUrl: "imageUrl",
+          createdAt: expect.any(String) as string,
+          senderId: userB.id,
+          receiverId: userA.id,
+          groupChatId: null,
+        });
       });
     });
 
     describe("given two users are not friends", () => {
-      it("should send message successfully", async () => {
+      it("should successfully send message", async () => {
         expect.hasAssertions();
 
         const userA = await userModel.createUserRecord("userA", "12345");
@@ -415,10 +473,56 @@ describe("usersRouter routes", () => {
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
           .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
-          .field("messageContent", "Hello from userB to user A")
+          .field("messageContent", "Hello from userB to userA")
+          .expect("Content-type", /json/)
           .expect(201);
 
+        const typedResponseBody = response.body as { message: Message };
+
         expect(response.ok).toBe(true);
+        expect(typedResponseBody.message).toStrictEqual({
+          id: expect.any(String) as string,
+          content: "Hello from userB to userA",
+          imageUrl: "imageUrl",
+          createdAt: expect.any(String) as string,
+          senderId: userB.id,
+          receiverId: userA.id,
+          groupChatId: null,
+        });
+      });
+    });
+
+    describe("given rejected promise during upload", () => {
+      it("should return 500 status when an error occurs during upload", async () => {
+        expect.hasAssertions();
+
+        vi.mocked(cloudinary.uploader.upload_stream).mockImplementationOnce(
+          (_options?: UploadApiOptions, cb?: UploadResponseCallback) => {
+            return {
+              end: () => {
+                if (cb) {
+                  cb({ http_code: 499, message: "FAILED", name: "TimeoutError" }, undefined);
+                }
+              },
+            } as UploadStream;
+          }
+        );
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .field("messageContent", "Hello from userB to userA")
+          .expect(500);
+
+        expect(response.serverError).toBe(true);
       });
     });
   });
