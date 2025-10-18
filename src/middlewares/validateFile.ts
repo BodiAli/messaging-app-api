@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import * as z from "zod";
 
-export default function validateFile(FileSchema: z.ZodObject) {
+export default function validateFile(FileSchema: z.ZodOptional<z.ZodObject>) {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = FileSchema.safeParse(req.file);
 
