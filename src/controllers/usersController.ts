@@ -1,4 +1,6 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
+import type { UploadApiResponse } from "cloudinary";
+import cloudinary from "../config/cloudinaryConfig.js";
 import * as friendshipModel from "../models/friendshipModel.js";
 import * as messageModel from "../models/messageModel.js";
 import * as userModel from "../models/userModel.js";
@@ -27,25 +29,56 @@ export async function getTwoUsersMessages(req: Request<{ id: string }>, res: Res
 
 export async function createMessage(
   req: Request<{ id: string }, object, { messageContent: string }>,
-  res: Response
+  res: Response,
+  next: NextFunction
 ) {
   if (!req.user) {
     throw new Error("User not found");
   }
 
-  const { id } = req.params;
+  const { id: receiverId } = req.params;
   const { messageContent } = req.body;
 
-  const doesUserExist = await userModel.getUserRecordById(id);
+  const doesUserExist = await userModel.getUserRecordById(receiverId);
 
   if (!doesUserExist) {
     res.status(404).json({ errors: [{ message: "Cannot find user to send message to." }] });
     return;
   }
 
-  await messageModel.sendMessageFromUserToUser(req.user.id, id, {
+  let imageUrl: string | null = null;
+
+  const file = req.file;
+
+  if (file) {
+    try {
+      const { secure_url } = await new Promise<UploadApiResponse>((resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream((error, uploadResult) => {
+            if (error) {
+              reject(error as Error);
+              return;
+            }
+
+            if (!uploadResult) {
+              throw new Error("Upload result not found");
+            }
+
+            resolve(uploadResult);
+          })
+          .end(file.buffer);
+      });
+
+      imageUrl = secure_url;
+    } catch (error) {
+      next(error);
+      return;
+    }
+  }
+
+  await messageModel.sendMessageFromUserToUser(req.user.id, receiverId, {
     content: messageContent,
-    imageUrl: null,
+    imageUrl,
   });
 
   res.sendStatus(201);
