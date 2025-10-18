@@ -34,6 +34,7 @@ export async function createMessage(
   }
 
   const { id } = req.params;
+  const { messageContent } = req.body;
 
   const doesUserExist = await userModel.getUserRecordById(id);
 
@@ -41,8 +42,6 @@ export async function createMessage(
     res.status(404).json({ errors: [{ message: "Cannot find user to send message to." }] });
     return;
   }
-
-  const { messageContent } = req.body;
 
   await messageModel.sendMessageFromUserToUser(req.user.id, id, {
     content: messageContent,
