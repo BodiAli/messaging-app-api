@@ -25,6 +25,13 @@ export const UserLogInSchema = z.strictObject({
   password: z.string("Please provide a string password.").nonempty("Password cannot be empty."),
 });
 
-export const CreateMessageSchema = z.strictObject({
-  messageContent: z.string("Please provide a string content").trim().nonempty("Message cannot be empty"),
+export const MessageContentSchema = z.strictObject({
+  messageContent: z.string("Please provide a string content").trim().nonempty("Message cannot be empty."),
 });
+
+export const FileSchema = z.optional(
+  z.object({
+    mimetype: z.string().startsWith("image/", { error: "File must be of type image." }),
+    size: z.number().max(5242880, { error: "File cannot exceed 5MBs." }),
+  })
+);
