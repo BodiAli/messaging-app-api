@@ -1,6 +1,6 @@
 import { Router } from "express";
 import * as authController from "../controllers/authController.js";
-import validateBody from "../middleware/validateBody.js";
+import validateBody from "../middlewares/validateBody.js";
 import { UserSignUpSchema, UserLogInSchema } from "../lib/zodSchemas.js";
 
 const authRouter = Router();
