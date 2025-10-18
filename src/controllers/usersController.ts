@@ -54,7 +54,7 @@ export async function createMessage(
     try {
       const { secure_url } = await new Promise<UploadApiResponse>((resolve, reject) => {
         cloudinary.uploader
-          .upload_stream((error, uploadResult) => {
+          .upload_stream({ resource_type: "image" }, (error, uploadResult) => {
             if (error) {
               reject(error as Error);
               return;
@@ -76,10 +76,10 @@ export async function createMessage(
     }
   }
 
-  await messageModel.sendMessageFromUserToUser(req.user.id, receiverId, {
+  const createdMessage = await messageModel.sendMessageFromUserToUser(req.user.id, receiverId, {
     content: messageContent,
     imageUrl,
   });
 
-  res.sendStatus(201);
+  res.status(201).json({ message: createdMessage });
 }
