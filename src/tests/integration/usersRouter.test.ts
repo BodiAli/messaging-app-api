@@ -259,7 +259,167 @@ describe("usersRouter routes", () => {
     });
 
     describe("given invalid message inputs", () => {
-      it.todo("should return 400 when message image is more than 5MB");
+      it("should return 400 when message image is more than 5MB", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const buffer = Buffer.alloc(1024 * 1024 * 5 + 1);
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .field("messageContent", "Hello from userB to userA")
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual([
+          expect.objectContaining({ message: "File cannot exceed 5MBs." }),
+        ]);
+      });
+
+      it("should return 400 when message image is not of type image", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .attach("messageImage", buffer, { filename: "fileName", contentType: "application/json" })
+          .field("messageContent", "Hello from userB to userA")
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual([
+          expect.objectContaining({ message: "File must be of type image." }),
+        ]);
+      });
+
+      it("should return 400 when content is empty", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .field("messageContent", "")
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual([
+          expect.objectContaining({ message: "Message cannot be empty." }),
+        ]);
+      });
+    });
+
+    describe("given valid message inputs", () => {
+      it("messageImage should be optional", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .field("messageContent", "Hello from userB to user A")
+          .expect(201);
+
+        expect(response.ok).toBe(true);
+      });
+
+      it("should return 201 status when messageContent and messageImage (if present) are valid", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .field("messageContent", "Hello from userB to user A")
+          .expect(201);
+
+        expect(response.ok).toBe(true);
+      });
+    });
+
+    describe("given two users are friends", () => {
+      it("should send message successfully", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const friendRequest = await friendshipModel.sendFriendRequest(userB.id, userA.id);
+
+        await friendshipModel.acceptFriendRequest(friendRequest.id);
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .field("messageContent", "Hello from userB to user A")
+          .expect(201);
+
+        expect(response.ok).toBe(true);
+      });
+    });
+
+    describe("given two users are not friends", () => {
+      it("should send message successfully", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .post(`/users/${userA.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .field("messageContent", "Hello from userB to user A")
+          .expect(201);
+
+        expect(response.ok).toBe(true);
+      });
     });
   });
 });
