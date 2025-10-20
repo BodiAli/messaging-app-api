@@ -52,14 +52,14 @@ model Message {
 }
 
 model GroupChat {
-  id           String        @id @default(uuid())
-  createdAt    DateTime      @default(now())
-  name         String        @db.VarChar(100)
-  adminId      String
-  admin        User          @relation("GroupsAdmin", fields: [adminId], references: [id])
-  users        User[]        @relation("GroupChats")
-  messages     Message[]
-  notification Notification?
+  id            String         @id @default(uuid())
+  createdAt     DateTime       @default(now())
+  name          String         @db.VarChar(100)
+  adminId       String
+  admin         User           @relation("GroupsAdmin", fields: [adminId], references: [id])
+  users         User[]         @relation("GroupChats")
+  messages      Message[]
+  notifications Notification[]
 }
 
 model Notification {
@@ -70,8 +70,10 @@ model Notification {
   userId                String
   friendRequestId       String?          @unique
   friendRequest         Friendship?      @relation(fields: [friendRequestId], references: [id], onDelete: Cascade)
-  groupChatInvitationId String?          @unique
+  groupChatInvitationId String?
   groupChatInvitation   GroupChat?       @relation(fields: [groupChatInvitationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupChatInvitationId])
 }
 
 enum FriendStatus {
