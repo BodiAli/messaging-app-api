@@ -11,7 +11,7 @@ export async function createGroup(groupName: string, adminId: string) {
   return createdGroup;
 }
 
-export async function getGroupMembers(groupId: string) {
+export async function getGroupWithMembers(groupId: string) {
   const groupWithMembers = await prisma.groupChat.findUnique({
     where: {
       id: groupId,
@@ -32,16 +32,62 @@ export async function getGroupMembers(groupId: string) {
   return groupWithMembers;
 }
 
-export async function inviteUsersToGroup(groupId: string, usersIds: string[]) {
+export async function sendGroupInviteToUsers(groupId: string, currentUserId: string, usersIds: string[]) {
+  const group = await prisma.groupChat.findUnique({
+    where: {
+      id: groupId,
+    },
+  });
+
+  if (!group) {
+    throw new Error("Group not found");
+  }
+
+  const isAdmin = group.adminId === currentUserId;
+
+  if (!isAdmin) {
+    throw new Error("You do not have permission to invite users to this group.");
+  }
+
+  if (usersIds.includes(group.adminId)) {
+    throw new Error("You cannot invite yourself to this group.");
+  }
+
+  await prisma.groupChat.update({
+    where: {
+      id: groupId,
+    },
+    data: {
+      notifications: {
+        create: usersIds.map((id) => ({ type: "GROUP_INVITATION", userId: id })),
+      },
+    },
+  });
+}
+
+export async function acceptGroupInvite(groupId: string, currentUserId: string) {
+  const doesInviteExist = await prisma.notification.findUnique({
+    where: {
+      userId_groupChatInvitationId: {
+        userId: currentUserId,
+        groupChatInvitationId: groupId,
+      },
+    },
+  });
+
+  if (!doesInviteExist) {
+    throw new Error("No invite found to accept.");
+  }
+
   await prisma.groupChat.update({
     where: {
       id: groupId,
     },
     data: {
       users: {
-        connect: usersIds.map((id) => {
-          return { id };
-        }),
+        connect: {
+          id: currentUserId,
+        },
       },
     },
   });
@@ -113,4 +159,25 @@ export async function deleteGroup(groupId: string, currentUserId: string) {
       id: groupId,
     },
   });
+}
+
+export async function getUserGroups(userId: string) {
+  const groups = await prisma.groupChat.findMany({
+    where: {
+      OR: [
+        {
+          adminId: userId,
+        },
+        {
+          users: {
+            some: {
+              id: userId,
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  return groups;
 }
