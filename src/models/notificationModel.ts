@@ -5,9 +5,18 @@ export async function getUserNotifications(id: string) {
     where: {
       userId: id,
 
-      friendRequest: {
-        status: "PENDING",
-      },
+      OR: [
+        {
+          friendRequest: {
+            status: "PENDING",
+          },
+        },
+        {
+          groupChatInvitationId: {
+            not: null,
+          },
+        },
+      ],
     },
 
     include: {
