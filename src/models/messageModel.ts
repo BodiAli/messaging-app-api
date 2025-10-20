@@ -1,4 +1,4 @@
-import prisma from "./prisma.js";
+import prisma from "./prismaClient/prisma.js";
 
 export async function sendMessageFromUserToUser(
   senderId: string,

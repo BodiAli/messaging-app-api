@@ -1,4 +1,4 @@
-import prisma from "./prisma.js";
+import prisma from "./prismaClient/prisma.js";
 
 export async function getUserNotifications(id: string) {
   const notifications = await prisma.notification.findMany({

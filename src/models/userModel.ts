@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import prisma from "./prisma.js";
+import prisma from "./prismaClient/prisma.js";
 
 export async function createUserRecord(username: string, password: string) {
   const hashedPassword = await bcrypt.hash(password, 10);
