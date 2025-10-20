@@ -65,6 +65,37 @@ export async function sendGroupInviteToUsers(groupId: string, currentUserId: str
   });
 }
 
+export async function rejectGroupInvite(groupId: string, currentUserId: string) {
+  const doesInviteExist = await prisma.notification.findUnique({
+    where: {
+      userId_groupChatInvitationId: {
+        userId: currentUserId,
+        groupChatInvitationId: groupId,
+      },
+    },
+  });
+
+  if (!doesInviteExist) {
+    throw new Error("No invite found to reject.");
+  }
+
+  await prisma.groupChat.update({
+    where: {
+      id: groupId,
+    },
+    data: {
+      notifications: {
+        delete: {
+          userId_groupChatInvitationId: {
+            userId: currentUserId,
+            groupChatInvitationId: groupId,
+          },
+        },
+      },
+    },
+  });
+}
+
 export async function acceptGroupInvite(groupId: string, currentUserId: string) {
   const doesInviteExist = await prisma.notification.findUnique({
     where: {
