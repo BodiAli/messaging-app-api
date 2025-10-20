@@ -36,7 +36,16 @@ export async function getUserNotifications(id: string) {
       },
       groupChatInvitation: {
         include: {
-          admin: true,
+          admin: {
+            omit: {
+              password: true,
+              lastSeen: true,
+              isGuest: true,
+            },
+          },
+        },
+        omit: {
+          adminId: true,
         },
       },
     },
