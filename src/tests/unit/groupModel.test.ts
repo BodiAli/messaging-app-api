@@ -121,6 +121,45 @@ describe("groupModel queries", () => {
     });
   });
 
+  describe(groupModel.rejectGroupInvite, () => {
+    it("should throw an error when a user tries to reject a non-existing invite", async () => {
+      expect.hasAssertions();
+
+      const admin = await userModel.createUserRecord("admin", "12345");
+      const userA = await userModel.createUserRecord("userA", "12345");
+      const userC = await userModel.createUserRecord("userC", "12345");
+
+      const createdGroup = await groupModel.createGroup("createdGroup", admin.id);
+
+      await groupModel.sendGroupInviteToUsers(createdGroup.id, admin.id, [userA.id]);
+
+      await expect(groupModel.rejectGroupInvite(createdGroup.id, userC.id)).rejects.toThrow(
+        "No invite found to reject."
+      );
+    });
+
+    it("should reject group invite", async () => {
+      expect.hasAssertions();
+
+      const admin = await userModel.createUserRecord("admin", "12345");
+      const userA = await userModel.createUserRecord("userA", "12345");
+
+      const createdGroup = await groupModel.createGroup("createdGroup", admin.id);
+
+      await groupModel.sendGroupInviteToUsers(createdGroup.id, admin.id, [userA.id]);
+
+      const userANotifications = await notificationModel.getUserNotifications(userA.id);
+
+      expect(userANotifications).toHaveLength(1);
+
+      await groupModel.rejectGroupInvite(createdGroup.id, userA.id);
+
+      const updatedUserANotifications = await notificationModel.getUserNotifications(userA.id);
+
+      expect(updatedUserANotifications).toHaveLength(0);
+    });
+  });
+
   describe(groupModel.getGroupWithMembers, () => {
     it("should return group members sorted by username", async () => {
       expect.hasAssertions();
