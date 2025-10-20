@@ -5,6 +5,7 @@ import validateBody from "../middlewares/validateBody.js";
 import validateFile from "../middlewares/validateFile.js";
 import * as usersController from "../controllers/usersController.js";
 import { FileSchema, MessageContentSchema } from "../lib/zodSchemas.js";
+import groupsRouter from "./groupsRouter.js";
 
 const usersRouter = Router();
 
@@ -20,5 +21,7 @@ usersRouter.post(
   validateBody(MessageContentSchema),
   usersController.createMessage
 );
+
+usersRouter.use("/:userId", groupsRouter);
 
 export default usersRouter;
