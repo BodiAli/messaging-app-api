@@ -157,8 +157,8 @@ describe("usersRouter routes", () => {
   });
 
   describe("get current user's messages with another user GET /users/:id/messages", () => {
-    describe("given invalid user id as param", () => {
-      it("should return 200 status with empty messages array", async () => {
+    describe("given non-existing user id as param", () => {
+      it("should return 404 status with error message", async () => {
         expect.hasAssertions();
 
         const userA = await userModel.createUserRecord("userA", "12345");
@@ -172,14 +172,20 @@ describe("usersRouter routes", () => {
         const userAToken = issueJwt(userA.id, "10m");
 
         const response = await request(app)
-          .get("/users/invalidParam/messages")
+          .get("/users/notExists/messages")
           .auth(userAToken, { type: "bearer" })
           .expect("Content-type", /json/)
-          .expect(200);
+          .expect(404);
 
-        const typedResponseBody = response.body as { messages: Message[] };
+        const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.messages).toHaveLength(0);
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "User not found.",
+            },
+          ],
+        });
       });
     });
 
