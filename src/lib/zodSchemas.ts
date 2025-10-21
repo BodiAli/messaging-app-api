@@ -35,3 +35,7 @@ export const FileSchema = z.optional(
     size: z.number().max(5242880, { error: "File cannot exceed 5MBs." }),
   })
 );
+
+export const GroupSchema = z.object({
+  groupName: z.string("Please provide a string group name.").trim().nonempty("Group name cannot be empty."),
+});
