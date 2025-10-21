@@ -1,28 +1,142 @@
 import express from "express";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import usersRouter from "../../routes/usersRouter.js";
+import type { GroupChat, User } from "../../generated/prisma/index.js";
+import * as userModel from "../../models/userModel.js";
+import * as groupModel from "../../models/groupModel.js";
+import issueJwt from "../../lib/issueJwt.js";
+import type ResponseError from "../../types/responseError.js";
 import "../../config/passportConfig.js";
 
 const app = express();
 
 app.use(express.json());
 
-// Testing /users/:userId/groups routes
+// Testing /users/me/groups routes
 app.use("/users", usersRouter);
 
 describe("groupsRouter routes", () => {
-  describe("get user groups GET /users/userId/groups", () => {
-    describe("given non-existing userId", () => {
-      it("should return 404 status with error message", async () => {
+  let currentUser: Omit<User, "password">;
+  let userA: Omit<User, "password">;
+  let userB: Omit<User, "password">;
+
+  beforeEach(async () => {
+    currentUser = await userModel.createUserRecord("currentUser", "12345");
+    userA = await userModel.createUserRecord("userA", "12345");
+    userB = await userModel.createUserRecord("userB", "12345");
+
+    await groupModel.createGroup("currentUser's group", currentUser.id);
+    await groupModel.createGroup("userB's group", userB.id);
+    const userAGroup = await groupModel.createGroup("userA's group", userA.id);
+
+    await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [currentUser.id]);
+
+    await groupModel.acceptGroupInvite(userAGroup.id, currentUser.id);
+  });
+
+  describe("get user groups GET /users/me/groups", () => {
+    describe("given get request", () => {
+      it("should return 200 status with all groups associated with current user", async () => {
         expect.hasAssertions();
 
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
         const response = await request(app)
-          .get("/users/nonExisting/groups")
+          .get("/users/me/groups")
+          .auth(currentUserToken, { type: "bearer" })
           .expect("Content-type", /json/)
           .expect(200);
 
-        console.log(response.text);
+        const typedResponseBody = response.body as { groups: GroupChat[] };
+
+        expect(typedResponseBody.groups).toStrictEqual<GroupChat[]>([
+          {
+            adminId: currentUser.id,
+            createdAt: expect.any(String) as Date,
+            id: expect.any(String) as string,
+            name: "currentUser's group",
+          },
+          {
+            adminId: userA.id,
+            createdAt: expect.any(String) as Date,
+            id: expect.any(String) as string,
+            name: "userA's group",
+          },
+        ]);
+      });
+    });
+  });
+
+  describe("create group POST /users/me/groups", () => {
+    describe("given invalid inputs", () => {
+      it("should return 400 status with errors", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post("/users/me/groups")
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ groupName: "  " })
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual([
+          expect.objectContaining({ message: "Group name cannot be empty." }),
+        ]);
+      });
+    });
+
+    describe("given valid inputs", () => {
+      it("should return 201 status with created group", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post("/users/me/groups")
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ groupName: "new group" })
+          .expect("Content-type", /json/)
+          .expect(201);
+
+        const typedResponseBody = response.body as { group: GroupChat };
+
+        expect(typedResponseBody.group).toStrictEqual<GroupChat>({
+          adminId: currentUser.id,
+          createdAt: expect.any(String) as Date,
+          id: expect.any(String) as string,
+          name: "new group",
+        });
+      });
+    });
+  });
+
+  describe("get group details GET /users/me/groups/:groupId", () => {
+    describe("given non-existing groupId", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get("/users/me/groups/nonExisting")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = (await response.body) as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            { message: "Post not found! it may have been moved, deleted or it might have never existed." },
+          ],
+        });
       });
     });
   });
