@@ -22,6 +22,6 @@ usersRouter.post(
   usersController.createMessage
 );
 
-usersRouter.use("/:userId", groupsRouter);
+usersRouter.use("/:userId/groups", groupsRouter);
 
 export default usersRouter;
