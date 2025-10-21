@@ -22,6 +22,13 @@ export async function getTwoUsersMessages(req: Request<{ id: string }>, res: Res
 
   const { id } = req.params;
 
+  const doesUserExist = await userModel.getUserRecordById(id);
+
+  if (!doesUserExist) {
+    res.status(404).json({ errors: [{ message: "User not found." }] });
+    return;
+  }
+
   const messages = await messageModel.getMessagesBetweenTwoUsers(req.user.id, id);
 
   res.json({ messages });
