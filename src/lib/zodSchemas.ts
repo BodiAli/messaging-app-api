@@ -39,3 +39,11 @@ export const FileSchema = z.optional(
 export const GroupSchema = z.object({
   groupName: z.string("Please provide a string group name.").trim().nonempty("Group name cannot be empty."),
 });
+
+export const SendGroupInviteToUsers = z.object({
+  userIds: z
+    .array(z.string("userIds must be an array of strings."), {
+      error: "userIds must be an array of strings.",
+    })
+    .nonempty("At least 1 user id must be provided."),
+});
