@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import * as groupModel from "../models/groupModel.js";
 import CustomHttpStatusError from "../errors/httpStatusError.js";
+import { Prisma } from "../generated/prisma/index.js";
 
 export async function getUserGroups(req: Request, res: Response) {
   if (!req.user) {
@@ -64,6 +65,13 @@ export async function createGroupInvite(
     if (error instanceof CustomHttpStatusError) {
       res.status(error.code).json({ errors: [{ message: error.message }] });
       return;
+    }
+
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2003") {
+        res.status(422).json({ errors: [{ message: "Invalid user ID." }] });
+        return;
+      }
     }
 
     next(error);
