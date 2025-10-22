@@ -27,6 +27,16 @@ export async function getGroupWithMembers(groupId: string) {
           username: "asc",
         },
       },
+      admin: {
+        omit: {
+          password: true,
+          lastSeen: true,
+          isGuest: true,
+        },
+      },
+    },
+    omit: {
+      adminId: true,
     },
   });
   return groupWithMembers;
