@@ -19,16 +19,14 @@ app.use("/users", usersRouter);
 describe("groupsRouter routes", () => {
   let currentUser: Omit<User, "password">;
   let userA: Omit<User, "password">;
-  let userB: Omit<User, "password">;
+  let userAGroup: GroupChat;
 
   beforeEach(async () => {
     currentUser = await userModel.createUserRecord("currentUser", "12345");
     userA = await userModel.createUserRecord("userA", "12345");
-    userB = await userModel.createUserRecord("userB", "12345");
 
     await groupModel.createGroup("currentUser's group", currentUser.id);
-    await groupModel.createGroup("userB's group", userB.id);
-    const userAGroup = await groupModel.createGroup("userA's group", userA.id);
+    userAGroup = await groupModel.createGroup("userA's group", userA.id);
 
     await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [currentUser.id]);
 
@@ -134,8 +132,50 @@ describe("groupsRouter routes", () => {
 
         expect(typedResponseBody).toStrictEqual<ResponseError>({
           errors: [
-            { message: "Post not found! it may have been moved, deleted or it might have never existed." },
+            { message: "Group not found! it may have been moved, deleted or it might have never existed." },
           ],
+        });
+      });
+    });
+
+    describe("given a valid groupId", () => {
+      it("should return 200 status and group with members", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get(`/users/me/groups/${userAGroup.id}`)
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as {
+          group: Omit<GroupChat, "adminId"> & { users: Pick<User, "id" | "imageUrl" | "username">[] } & {
+            admin: Pick<User, "id" | "imageUrl" | "username">;
+          };
+        };
+
+        expect(typedResponseBody.group).toStrictEqual<
+          Omit<GroupChat, "adminId"> & { users: Pick<User, "id" | "imageUrl" | "username">[] } & {
+            admin: Pick<User, "id" | "imageUrl" | "username">;
+          }
+        >({
+          createdAt: expect.any(String) as Date,
+          id: expect.any(String) as string,
+          name: "userA's group",
+          users: [
+            {
+              id: currentUser.id,
+              imageUrl: null,
+              username: "currentUser",
+            },
+          ],
+          admin: {
+            id: userA.id,
+            imageUrl: null,
+            username: "userA",
+          },
         });
       });
     });
