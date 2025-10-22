@@ -203,8 +203,8 @@ describe("groupsRouter routes", () => {
       });
     });
 
-    describe("given invalid userIds as an array", () => {
-      it("should return 400 status with error message", async () => {
+    describe("given invalid userIds input", () => {
+      it("should return 400 status with error message when userIds is not an array", async () => {
         expect.hasAssertions();
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
@@ -227,6 +227,97 @@ describe("groupsRouter routes", () => {
           ],
         });
       });
+
+      it("should return 400 status with error message when userIds is empty", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${currentUserGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: [] })
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            expect.objectContaining({
+              message: "At least 1 user id must be provided.",
+            }) as { message: string },
+          ],
+        });
+      });
+
+      it("should return 422 status with error message if userId does not exist", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${currentUserGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: ["nonExistingId"] })
+          .expect("Content-type", /json/)
+          .expect(422);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            expect.objectContaining({
+              message: "Invalid user ID.",
+            }) as { message: string },
+          ],
+        });
+      });
+
+      it("should return 422 status with error message group admin invites themselves", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${currentUserGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: [currentUser.id] })
+          .expect("Content-type", /json/)
+          .expect(422);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            expect.objectContaining({
+              message: "You cannot invite yourself to this group.",
+            }) as { message: string },
+          ],
+        });
+      });
+    });
+
+    describe("given valid userIds input", () => {
+      it("should return 201 status", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${currentUserGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: [userA.id] })
+          .expect(201);
+
+        expect(response.ok).toBe(true);
+      });
     });
   });
+
+  describe.todo("reject group invite PATCH /users/me/groups/:groupId/notifications-TODO");
 });
