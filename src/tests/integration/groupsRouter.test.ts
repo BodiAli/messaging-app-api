@@ -20,12 +20,13 @@ describe("groupsRouter routes", () => {
   let currentUser: Omit<User, "password">;
   let userA: Omit<User, "password">;
   let userAGroup: GroupChat;
+  let currentUserGroup: GroupChat;
 
   beforeEach(async () => {
     currentUser = await userModel.createUserRecord("currentUser", "12345");
     userA = await userModel.createUserRecord("userA", "12345");
 
-    await groupModel.createGroup("currentUser's group", currentUser.id);
+    currentUserGroup = await groupModel.createGroup("currentUser's group", currentUser.id);
     userAGroup = await groupModel.createGroup("userA's group", userA.id);
 
     await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [currentUser.id]);
@@ -176,6 +177,54 @@ describe("groupsRouter routes", () => {
             imageUrl: null,
             username: "userA",
           },
+        });
+      });
+    });
+  });
+
+  describe("create group invite POST /users/me/groups/:groupId/notifications", () => {
+    describe("given non-existing group id", () => {
+      it("should return 404 with an error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post("/users/me/groups/nonExistingId/notifications")
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: [userA.id] })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({ errors: [{ message: "Group not found." }] });
+      });
+    });
+
+    describe("given invalid userIds as an array", () => {
+      it("should return 400 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${currentUserGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: "invalid" })
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            expect.objectContaining({
+              message: "userIds must be an array of strings.",
+            }) as { message: string },
+          ],
         });
       });
     });
