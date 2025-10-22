@@ -35,12 +35,12 @@ export async function getGroupWithMembers(req: Request<{ groupId: string }>, res
   if (!groupWithMembers) {
     res.status(404).json({
       errors: [
-        { message: "Post not found! it may have been moved, deleted or it might have never existed." },
+        { message: "Group not found! it may have been moved, deleted or it might have never existed." },
       ],
     });
 
     return;
   }
 
-  res.status(404).json({ group: groupWithMembers });
+  res.status(200).json({ group: groupWithMembers });
 }
