@@ -1,5 +1,6 @@
-import type { Request, Response } from "express";
+import type { NextFunction, Request, Response } from "express";
 import * as groupModel from "../models/groupModel.js";
+import CustomHttpStatusError from "../errors/httpStatusError.js";
 
 export async function getUserGroups(req: Request, res: Response) {
   if (!req.user) {
@@ -43,4 +44,31 @@ export async function getGroupWithMembers(req: Request<{ groupId: string }>, res
   }
 
   res.status(200).json({ group: groupWithMembers });
+}
+
+export async function createGroupInvite(
+  req: Request<{ groupId: string }, object, { userIds: string[] }>,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const { groupId } = req.params;
+  const { userIds } = req.body;
+
+  try {
+    await groupModel.sendGroupInviteToUsers(groupId, req.user.id, userIds);
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+
+    next(error);
+    return;
+  }
+
+  res.sendStatus(201);
 }
