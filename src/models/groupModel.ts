@@ -61,7 +61,7 @@ export async function sendGroupInviteToUsers(groupId: string, currentUserId: str
   }
 
   if (usersIds.includes(group.adminId)) {
-    throw new CustomHttpStatusError("You do not have permission to invite users to this group.", 400);
+    throw new CustomHttpStatusError("You cannot invite yourself to this group.", 400);
   }
 
   await prisma.groupChat.update({
