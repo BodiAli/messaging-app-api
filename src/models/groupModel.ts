@@ -1,3 +1,4 @@
+import CustomHttpStatusError from "../errors/httpStatusError.js";
 import prisma from "./prismaClient/prisma.js";
 
 export async function createGroup(groupName: string, adminId: string) {
@@ -50,17 +51,17 @@ export async function sendGroupInviteToUsers(groupId: string, currentUserId: str
   });
 
   if (!group) {
-    throw new Error("Group not found");
+    throw new CustomHttpStatusError("Group not found.", 404);
   }
 
   const isAdmin = group.adminId === currentUserId;
 
   if (!isAdmin) {
-    throw new Error("You do not have permission to invite users to this group.");
+    throw new CustomHttpStatusError("You do not have permission to invite users to this group.", 403);
   }
 
   if (usersIds.includes(group.adminId)) {
-    throw new Error("You cannot invite yourself to this group.");
+    throw new CustomHttpStatusError("You do not have permission to invite users to this group.", 400);
   }
 
   await prisma.groupChat.update({
@@ -86,7 +87,7 @@ export async function rejectGroupInvite(groupId: string, currentUserId: string) 
   });
 
   if (!doesInviteExist) {
-    throw new Error("No invite found to reject.");
+    throw new CustomHttpStatusError("No invite found to reject.", 404);
   }
 
   await prisma.groupChat.update({
@@ -117,7 +118,7 @@ export async function acceptGroupInvite(groupId: string, currentUserId: string) 
   });
 
   if (!doesInviteExist) {
-    throw new Error("No invite found to accept.");
+    throw new CustomHttpStatusError("No invite found to accept.", 404);
   }
 
   await prisma.groupChat.update({
@@ -156,14 +157,14 @@ export async function removeGroupMember(groupId: string, memberId: string, curre
   });
 
   if (!group) {
-    throw new Error("Group not found");
+    throw new CustomHttpStatusError("Group not found", 404);
   }
 
   const isAdmin = group.adminId === currentUserId;
   const isSelf = memberId === currentUserId;
 
   if (!isAdmin && !isSelf) {
-    throw new Error("You do not have permission to remove this member.");
+    throw new CustomHttpStatusError("You do not have permission to remove this member.", 403);
   }
 
   await prisma.groupChat.update({
@@ -188,11 +189,11 @@ export async function deleteGroup(groupId: string, currentUserId: string) {
   });
 
   if (!group) {
-    throw new Error("Group not found");
+    throw new CustomHttpStatusError("Group not found", 404);
   }
 
   if (group.adminId !== currentUserId) {
-    throw new Error("You do not have permission to delete this group.");
+    throw new CustomHttpStatusError("You do not have permission to delete this group.", 403);
   }
 
   await prisma.groupChat.delete({
