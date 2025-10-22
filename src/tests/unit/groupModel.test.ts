@@ -161,7 +161,7 @@ describe("groupModel queries", () => {
   });
 
   describe(groupModel.getGroupWithMembers, () => {
-    it("should return group members sorted by username", async () => {
+    it("should return group members sorted by username and group admin", async () => {
       expect.hasAssertions();
 
       const admin = await userModel.createUserRecord("admin", "12345");
@@ -200,6 +200,12 @@ describe("groupModel queries", () => {
           imageUrl: userC.imageUrl,
         },
       ]);
+
+      expect(updatedGroup.admin).toStrictEqual({
+        id: admin.id,
+        username: "admin",
+        imageUrl: null,
+      });
     });
   });
 
