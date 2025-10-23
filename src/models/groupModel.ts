@@ -171,7 +171,7 @@ export async function removeGroupMember(groupId: string, memberId: string, curre
   });
 
   if (!group) {
-    throw new CustomHttpStatusError("Group not found", 404);
+    throw new CustomHttpStatusError("Group not found.", 404);
   }
 
   const isAdmin = group.adminId === currentUserId;
@@ -179,6 +179,21 @@ export async function removeGroupMember(groupId: string, memberId: string, curre
 
   if (!isAdmin && !isSelf) {
     throw new CustomHttpStatusError("You do not have permission to remove this member.", 403);
+  }
+
+  const isMemberInGroup = await prisma.user.findUnique({
+    where: {
+      id: memberId,
+      groupChats: {
+        some: {
+          id: groupId,
+        },
+      },
+    },
+  });
+
+  if (!isMemberInGroup) {
+    throw new CustomHttpStatusError("No member found to remove.", 404);
   }
 
   await prisma.groupChat.update({
