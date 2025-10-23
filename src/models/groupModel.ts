@@ -135,7 +135,21 @@ export async function acceptGroupInvite(groupId: string, currentUserId: string) 
   });
 }
 
-export async function updateGroupName(groupId: string, newName: string) {
+export async function updateGroupName(groupId: string, currentUserId: string, newName: string) {
+  const group = await prisma.groupChat.findUnique({
+    where: {
+      id: groupId,
+    },
+  });
+
+  if (!group) {
+    throw new CustomHttpStatusError("Group not found.", 404);
+  }
+
+  if (group.adminId !== currentUserId) {
+    throw new CustomHttpStatusError("You do not have permission to update this group name.", 403);
+  }
+
   const updatedGroup = await prisma.groupChat.update({
     where: {
       id: groupId,
@@ -189,7 +203,7 @@ export async function deleteGroup(groupId: string, currentUserId: string) {
   });
 
   if (!group) {
-    throw new CustomHttpStatusError("Group not found", 404);
+    throw new CustomHttpStatusError("Group not found.", 404);
   }
 
   if (group.adminId !== currentUserId) {
