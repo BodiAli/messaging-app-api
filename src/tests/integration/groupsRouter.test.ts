@@ -539,4 +539,214 @@ describe("groupsRouter routes", () => {
       });
     });
   });
+
+  describe("remove group member DELETE /users/me/groups/:groupId/members/:memberId", () => {
+    describe("given non-existing group id", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .delete(`/users/me/groups/notExists/members/${currentUser.id}`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "Group not found.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given non-existing memberId", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .delete(`/users/me/groups/${userAGroup.id}/members/notExits`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "No member found to remove.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given non-admin or not same user tries to remove user/themselves", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const response = await request(app)
+          .delete(`/users/me/groups/${userAGroup.id}/members/${currentUser.id}`)
+          .auth(userBToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "You do not have permission to remove this member.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given user is admin", () => {
+      it("should return 204 status", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .delete(`/users/me/groups/${userAGroup.id}/members/${currentUser.id}`)
+          .auth(userAToken, { type: "bearer" })
+          .expect(204);
+
+        expect(response.noContent).toBe(true);
+      });
+    });
+
+    describe("given user tries removing themselves", () => {
+      it("should return 204 status", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .delete(`/users/me/groups/${userAGroup.id}/members/${currentUser.id}`)
+          .auth(currentUserToken, { type: "bearer" })
+          .expect(204);
+
+        expect(response.noContent).toBe(true);
+      });
+    });
+  });
+
+  describe("delete group DELETE /users/me/groups/:groupId", () => {
+    describe("given non-existing group id", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .delete("/users/me/groups/notExists")
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "Group not found.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given current user is not group admin", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .delete(`/users/me/groups/${currentUserGroup.id}`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "You do not have permission to delete this group.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given current user is admin and group id is valid", () => {
+      it("should return 204 status", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const currentUserResponse1 = await request(app)
+          .get(`/users/me/groups`)
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const currentUserBeforeDelete = currentUserResponse1.body as { groups: GroupChat[] };
+
+        expect(currentUserBeforeDelete.groups).toStrictEqual<GroupChat[]>([
+          {
+            adminId: currentUser.id,
+            createdAt: expect.any(String) as Date,
+            id: currentUserGroup.id,
+            name: "currentUser's group",
+          },
+          {
+            adminId: userA.id,
+            createdAt: expect.any(String) as Date,
+            id: userAGroup.id,
+            name: "userA's group",
+          },
+        ]);
+
+        const response = await request(app)
+          .delete(`/users/me/groups/${userAGroup.id}`)
+          .auth(userAToken, { type: "bearer" })
+          .expect(204);
+
+        expect(response.noContent).toBe(true);
+
+        const currentUserResponse2 = await request(app)
+          .get(`/users/me/groups`)
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const currentUserGroupsAfterDelete = currentUserResponse2.body as { groups: GroupChat[] };
+
+        expect(currentUserGroupsAfterDelete.groups).toStrictEqual<GroupChat[]>([
+          {
+            adminId: currentUser.id,
+            createdAt: expect.any(String) as Date,
+            id: currentUserGroup.id,
+            name: "currentUser's group",
+          },
+        ]);
+      });
+    });
+  });
 });
