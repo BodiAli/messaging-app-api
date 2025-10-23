@@ -5,18 +5,23 @@ import * as groupsController from "../controllers/groupsController.js";
 
 const groupsRouter = Router({ mergeParams: true });
 
-groupsRouter.get("/", groupsController.getUserGroups);
-groupsRouter.post("/", validateBody(GroupSchema), groupsController.createGroup);
+groupsRouter
+  .route("/")
+  .get(groupsController.getUserGroups)
+  .post(validateBody(GroupSchema), groupsController.createGroup);
 
-groupsRouter.get("/:groupId", groupsController.getGroupWithMembers);
-groupsRouter.patch("/:groupId", validateBody(GroupSchema), groupsController.updateGroupName);
+groupsRouter
+  .route("/:groupId")
+  .get(groupsController.getGroupWithMembers)
+  .patch(validateBody(GroupSchema), groupsController.updateGroupName)
+  .delete(groupsController.deleteGroup);
 
-groupsRouter.post(
-  "/:groupId/notifications",
-  validateBody(SendGroupInviteToUsers),
-  groupsController.createGroupInvite
-);
-groupsRouter.delete("/:groupId/notifications", groupsController.deleteGroupInvite);
-groupsRouter.patch("/:groupId/notifications", groupsController.acceptGroupInvite);
+groupsRouter
+  .route("/:groupId/notifications")
+  .post(validateBody(SendGroupInviteToUsers), groupsController.createGroupInvite)
+  .delete(groupsController.deleteGroupInvite)
+  .patch(groupsController.acceptGroupInvite);
+
+groupsRouter.delete("/:groupId/members/:memberId", groupsController.deleteGroupMember);
 
 export default groupsRouter;
