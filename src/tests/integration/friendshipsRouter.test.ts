@@ -46,7 +46,7 @@ describe("friendshipsRouter routes", () => {
   });
 
   describe("create friend request POST /friendships", () => {
-    describe("given userA sent a friend request to userB", () => {
+    describe("given john sent a friend request to bodi", () => {
       it("should return 409 when bodi tries to send a friend request to john", async () => {
         expect.hasAssertions();
 
