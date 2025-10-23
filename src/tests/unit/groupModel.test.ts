@@ -103,7 +103,19 @@ describe("groupModel queries", () => {
 
       expect(groupWithNoUsers.users).toHaveLength(0);
 
+      const userANotifications = await notificationModel.getUserNotifications(userA.id);
+
+      if (!userANotifications[0] || !userANotifications[0].groupChatInvitation) {
+        throw new Error("Notification not found");
+      }
+
+      expect(userANotifications[0].groupChatInvitation.name).toBe("createdGroup");
+
       await groupModel.acceptGroupInvite(createdGroup.id, userA.id);
+
+      const updatedUserANotifications = await notificationModel.getUserNotifications(userA.id);
+
+      expect(updatedUserANotifications).toHaveLength(0);
 
       const groupWithUsers = await groupModel.getGroupWithMembers(createdGroup.id);
 
