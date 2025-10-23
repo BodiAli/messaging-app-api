@@ -154,3 +154,47 @@ export async function updateGroupName(
     next(error);
   }
 }
+
+export async function deleteGroupMember(
+  req: Request<{ groupId: string; memberId: string }>,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const { groupId, memberId } = req.params;
+
+  try {
+    await groupModel.removeGroupMember(groupId, memberId, req.user.id);
+    res.sendStatus(204);
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+
+    next(error);
+  }
+}
+
+export async function deleteGroup(req: Request<{ groupId: string }>, res: Response, next: NextFunction) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const { groupId } = req.params;
+
+  try {
+    await groupModel.deleteGroup(groupId, req.user.id);
+
+    res.sendStatus(204);
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+    next(error);
+  }
+}
