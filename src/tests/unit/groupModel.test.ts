@@ -210,14 +210,25 @@ describe("groupModel queries", () => {
   });
 
   describe(groupModel.updateGroupName, () => {
+    it("should throw an error when a non-admin tries to update name", async () => {
+      expect.hasAssertions();
+
+      const admin = await userModel.createUserRecord("admin", "12345");
+      const member = await userModel.createUserRecord("member", "12345");
+      const createdGroup = await groupModel.createGroup("createdGroup", admin.id);
+
+      await expect(groupModel.updateGroupName(createdGroup.id, member.id, "new name")).rejects.toThrow(
+        "You do not have permission to update this group name."
+      );
+    });
+
     it("should update group name and return updated record", async () => {
       expect.hasAssertions();
 
       const admin = await userModel.createUserRecord("admin", "12345");
-
       const createdGroup = await groupModel.createGroup("createdGroup", admin.id);
 
-      const updatedGroup = await groupModel.updateGroupName(createdGroup.id, "new name");
+      const updatedGroup = await groupModel.updateGroupName(createdGroup.id, admin.id, "new name");
 
       expect(updatedGroup.name).toBe("new name");
     });
