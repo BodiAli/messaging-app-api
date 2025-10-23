@@ -54,6 +54,9 @@ export async function getUserNotifications(id: string) {
       groupChatInvitationId: true,
       userId: true,
     },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
   return notifications;
