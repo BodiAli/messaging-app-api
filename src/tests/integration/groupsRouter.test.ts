@@ -19,15 +19,19 @@ app.use("/users", usersRouter);
 describe("groupsRouter routes", () => {
   let currentUser: Omit<User, "password">;
   let userA: Omit<User, "password">;
+  let userB: Omit<User, "password">;
   let userAGroup: GroupChat;
+  let userBGroup: GroupChat;
   let currentUserGroup: GroupChat;
 
   beforeEach(async () => {
     currentUser = await userModel.createUserRecord("currentUser", "12345");
     userA = await userModel.createUserRecord("userA", "12345");
+    userB = await userModel.createUserRecord("userB", "12345");
 
     currentUserGroup = await groupModel.createGroup("currentUser's group", currentUser.id);
     userAGroup = await groupModel.createGroup("userA's group", userA.id);
+    userBGroup = await groupModel.createGroup("userB's group", userB.id);
 
     await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [currentUser.id]);
 
@@ -319,5 +323,220 @@ describe("groupsRouter routes", () => {
     });
   });
 
-  describe.todo("reject group invite PATCH /users/me/groups/:groupId/notifications-TODO");
+  describe("delete group invite DELETE /users/me/groups/:groupId/notifications", () => {
+    describe("given non-existing group id", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const userBToken = issueJwt(userB.id, "10m");
+
+        await request(app)
+          .post(`/users/me/groups/${userBGroup.id}/notifications`)
+          .auth(userBToken, { type: "bearer" })
+          .send({ userIds: [currentUser.id] })
+          .expect(201);
+
+        const response = await request(app)
+          .delete("/users/me/groups/notExists/notifications")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "No invite found to reject.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given valid group id", () => {
+      it("should return 204 status", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const userBToken = issueJwt(userB.id, "10m");
+
+        await request(app)
+          .post(`/users/me/groups/${userBGroup.id}/notifications`)
+          .auth(userBToken, { type: "bearer" })
+          .send({ userIds: [currentUser.id] })
+          .expect(201);
+
+        const response = await request(app)
+          .delete(`/users/me/groups/${userBGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .expect(204);
+
+        expect(response.noContent).toBe(true);
+      });
+    });
+  });
+
+  describe("accept group invite PATCH /users/me/groups/:groupId/notifications", () => {
+    describe("given non-existing group id", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const userBToken = issueJwt(userB.id, "10m");
+
+        await request(app)
+          .post(`/users/me/groups/${userBGroup.id}/notifications`)
+          .auth(userBToken, { type: "bearer" })
+          .send({ userIds: [currentUser.id] })
+          .expect(201);
+
+        const response = await request(app)
+          .patch("/users/me/groups/notExists/notifications")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "No invite found to accept.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given valid group id", () => {
+      it("should return 204 status", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const userBToken = issueJwt(userB.id, "10m");
+
+        await request(app)
+          .post(`/users/me/groups/${userBGroup.id}/notifications`)
+          .auth(userBToken, { type: "bearer" })
+          .send({ userIds: [currentUser.id] })
+          .expect(201);
+
+        const response = await request(app)
+          .patch(`/users/me/groups/${userBGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .expect(204);
+
+        expect(response.noContent).toBe(true);
+      });
+    });
+  });
+
+  describe("update group name PATCH /users/me/groups/:groupId", () => {
+    describe("given non-existing group id", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .patch("/users/me/groups/nonExisting")
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ groupName: "new group name" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "Group not found.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given non-admin user", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .patch(`/users/me/groups/${currentUserGroup.id}`)
+          .auth(userAToken, { type: "bearer" })
+          .type("json")
+          .send({ groupName: "new group name" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "You do not have permission to update this group name.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given invalid group name input", () => {
+      it("should return 400 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .patch(`/users/me/groups/${currentUserGroup.id}`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ groupName: "  " })
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            expect.objectContaining({
+              message: "Group name cannot be empty.",
+            }) as { message: string },
+          ],
+        });
+      });
+    });
+
+    describe("given valid group name", () => {
+      it("should return 200 status with updated group object", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .patch(`/users/me/groups/${currentUserGroup.id}`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ groupName: "new group name" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as { group: GroupChat };
+
+        expect(typedResponseBody).toStrictEqual<{ group: GroupChat }>({
+          group: {
+            adminId: currentUser.id,
+            createdAt: expect.any(String) as Date,
+            id: currentUserGroup.id,
+            name: "new group name",
+          },
+        });
+      });
+    });
+  });
 });
