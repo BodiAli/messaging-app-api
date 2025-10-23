@@ -57,8 +57,8 @@ describe("notificationsRouter routes", () => {
               status: "PENDING",
               createdAt: expect.any(String) as Date,
               sender: {
-                id: userB.id,
-                username: "userB",
+                id: userC.id,
+                username: "userC",
                 imageUrl: null,
               },
             },
@@ -74,8 +74,8 @@ describe("notificationsRouter routes", () => {
               status: "PENDING",
               createdAt: expect.any(String) as Date,
               sender: {
-                id: userC.id,
-                username: "userC",
+                id: userB.id,
+                username: "userB",
                 imageUrl: null,
               },
             },
@@ -155,11 +155,11 @@ describe("notificationsRouter routes", () => {
             groupChatInvitation: {
               createdAt: expect.any(String) as Date,
               id: expect.any(String) as string,
-              name: "userB group",
+              name: "userC group",
               admin: {
-                id: userB.id,
+                id: userC.id,
                 imageUrl: null,
-                username: "userB",
+                username: "userC",
               },
             },
           },
@@ -171,11 +171,11 @@ describe("notificationsRouter routes", () => {
             groupChatInvitation: {
               createdAt: expect.any(String) as Date,
               id: expect.any(String) as string,
-              name: "userC group",
+              name: "userB group",
               admin: {
-                id: userC.id,
+                id: userB.id,
                 imageUrl: null,
-                username: "userC",
+                username: "userB",
               },
             },
           },

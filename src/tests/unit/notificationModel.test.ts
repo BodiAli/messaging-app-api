@@ -39,9 +39,9 @@ describe("notificationModel queries", () => {
             status: "PENDING",
             receiverId: userA.id,
             sender: {
-              id: userB.id,
+              id: userC.id,
               imageUrl: null,
-              username: "userB",
+              username: "userC",
             },
           },
         },
@@ -56,9 +56,9 @@ describe("notificationModel queries", () => {
             status: "PENDING",
             receiverId: userA.id,
             sender: {
-              id: userC.id,
+              id: userB.id,
               imageUrl: null,
-              username: "userC",
+              username: "userB",
             },
           },
         },
@@ -84,13 +84,13 @@ describe("notificationModel queries", () => {
           id: expect.any(String) as string,
           groupChatInvitation: {
             admin: {
-              id: userA.id,
+              id: userB.id,
               imageUrl: null,
-              username: "userA",
+              username: "userB",
             },
             createdAt: expect.any(Date) as Date,
             id: expect.any(String) as string,
-            name: "userAGroup",
+            name: "userBGroup",
           },
         },
         {
@@ -100,13 +100,13 @@ describe("notificationModel queries", () => {
           id: expect.any(String) as string,
           groupChatInvitation: {
             admin: {
-              id: userB.id,
+              id: userA.id,
               imageUrl: null,
-              username: "userB",
+              username: "userA",
             },
             createdAt: expect.any(Date) as Date,
             id: expect.any(String) as string,
-            name: "userBGroup",
+            name: "userAGroup",
           },
         },
       ]);
@@ -125,22 +125,6 @@ describe("notificationModel queries", () => {
       expect(userANotifications).toStrictEqual<UserNotifications>([
         {
           createdAt: expect.any(Date) as Date,
-          type: "GROUP_INVITATION",
-          id: expect.any(String) as string,
-          friendRequest: null,
-          groupChatInvitation: {
-            admin: {
-              id: userC.id,
-              imageUrl: null,
-              username: "userC",
-            },
-            name: "userCGroup",
-            id: expect.any(String) as string,
-            createdAt: expect.any(Date) as Date,
-          },
-        },
-        {
-          createdAt: expect.any(Date) as Date,
           type: "FRIEND_REQUEST",
           id: expect.any(String) as string,
           groupChatInvitation: null,
@@ -154,6 +138,22 @@ describe("notificationModel queries", () => {
               imageUrl: null,
               username: "userB",
             },
+          },
+        },
+        {
+          createdAt: expect.any(Date) as Date,
+          type: "GROUP_INVITATION",
+          id: expect.any(String) as string,
+          friendRequest: null,
+          groupChatInvitation: {
+            admin: {
+              id: userC.id,
+              imageUrl: null,
+              username: "userC",
+            },
+            name: "userCGroup",
+            id: expect.any(String) as string,
+            createdAt: expect.any(Date) as Date,
           },
         },
       ]);
