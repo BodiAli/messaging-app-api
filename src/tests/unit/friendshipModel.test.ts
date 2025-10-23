@@ -148,4 +148,111 @@ describe("friendshipModel Queries", () => {
       );
     });
   });
+
+  describe(friendshipModel.getAnonymousUsers, () => {
+    type AnonymousUsers = Pick<User, "id" | "username" | "imageUrl">[];
+
+    let bodi: Omit<User, "password">;
+    let john: Omit<User, "password">;
+    let clare: Omit<User, "password">;
+    let ahmed: Omit<User, "password">;
+
+    beforeEach(async () => {
+      bodi = await userModel.createUserRecord("bodi", "12345");
+      john = await userModel.createUserRecord("john", "12345");
+      clare = await userModel.createUserRecord("clare", "12345");
+      ahmed = await userModel.createUserRecord("ahmed", "12345");
+
+      const friendRequestOfJohn = await friendshipModel.sendFriendRequest(john.id, bodi.id);
+      await friendshipModel.sendFriendRequest(clare.id, bodi.id);
+
+      await friendshipModel.acceptFriendRequest(friendRequestOfJohn.id);
+    });
+
+    it("should return bodi's non-friends", async () => {
+      expect.hasAssertions();
+
+      const nonFriendsOfBodi = await friendshipModel.getAnonymousUsers(bodi.id);
+
+      expect(nonFriendsOfBodi).toStrictEqual<AnonymousUsers>([
+        {
+          id: ahmed.id,
+          imageUrl: null,
+          username: "ahmed",
+        },
+        {
+          id: clare.id,
+          imageUrl: null,
+          username: "clare",
+        },
+      ]);
+    });
+
+    it("should return john's non-friends", async () => {
+      expect.hasAssertions();
+
+      const nonFriendsOfJohn = await friendshipModel.getAnonymousUsers(john.id);
+
+      expect(nonFriendsOfJohn).toStrictEqual<AnonymousUsers>([
+        {
+          id: ahmed.id,
+          imageUrl: null,
+          username: "ahmed",
+        },
+        {
+          id: clare.id,
+          imageUrl: null,
+          username: "clare",
+        },
+      ]);
+    });
+
+    it("should return clare's non-friends", async () => {
+      expect.hasAssertions();
+
+      const nonFriendsOfClare = await friendshipModel.getAnonymousUsers(clare.id);
+
+      expect(nonFriendsOfClare).toStrictEqual<AnonymousUsers>([
+        {
+          id: ahmed.id,
+          imageUrl: null,
+          username: "ahmed",
+        },
+        {
+          id: bodi.id,
+          imageUrl: null,
+          username: "bodi",
+        },
+        {
+          id: john.id,
+          imageUrl: null,
+          username: "john",
+        },
+      ]);
+    });
+
+    it("should return ahmed's non-friends", async () => {
+      expect.hasAssertions();
+
+      const nonFriendsOfAhmed = await friendshipModel.getAnonymousUsers(ahmed.id);
+
+      expect(nonFriendsOfAhmed).toStrictEqual<AnonymousUsers>([
+        {
+          id: bodi.id,
+          imageUrl: null,
+          username: "bodi",
+        },
+        {
+          id: clare.id,
+          imageUrl: null,
+          username: "clare",
+        },
+        {
+          id: john.id,
+          imageUrl: null,
+          username: "john",
+        },
+      ]);
+    });
+  });
 });
