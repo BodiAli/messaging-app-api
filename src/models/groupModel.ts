@@ -131,6 +131,14 @@ export async function acceptGroupInvite(groupId: string, currentUserId: string) 
           id: currentUserId,
         },
       },
+      notifications: {
+        delete: {
+          userId_groupChatInvitationId: {
+            groupChatInvitationId: groupId,
+            userId: currentUserId,
+          },
+        },
+      },
     },
   });
 }
