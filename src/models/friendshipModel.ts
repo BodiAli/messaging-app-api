@@ -130,3 +130,30 @@ export async function getUserFriends(id: string) {
 
   return friends;
 }
+
+export async function getAnonymousUsers(currentUserId: string) {
+  const anonymousUsers = await prisma.user.findMany({
+    where: {
+      id: { not: currentUserId },
+      receivedFriendRequests: {
+        none: {
+          senderId: currentUserId,
+          status: "ACCEPTED",
+        },
+      },
+      sentFriendRequests: {
+        none: {
+          receiverId: currentUserId,
+          status: "ACCEPTED",
+        },
+      },
+    },
+    select: {
+      id: true,
+      username: true,
+      imageUrl: true,
+    },
+  });
+
+  return anonymousUsers;
+}
