@@ -153,6 +153,9 @@ export async function getAnonymousUsers(currentUserId: string) {
       username: true,
       imageUrl: true,
     },
+    orderBy: {
+      username: "asc",
+    },
   });
 
   return anonymousUsers;
