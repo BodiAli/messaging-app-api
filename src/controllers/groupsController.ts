@@ -26,10 +26,6 @@ export async function createGroup(req: Request<object, object, { groupName: stri
 }
 
 export async function getGroupWithMembers(req: Request<{ groupId: string }>, res: Response) {
-  if (!req.user) {
-    throw new Error("User not found");
-  }
-
   const { groupId } = req.params;
 
   const groupWithMembers = await groupModel.getGroupWithMembers(groupId);
@@ -79,4 +75,82 @@ export async function createGroupInvite(
   }
 
   res.sendStatus(201);
+}
+
+export async function deleteGroupInvite(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const { groupId } = req.params;
+
+  try {
+    await groupModel.rejectGroupInvite(groupId, req.user.id);
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+
+    next(error);
+    return;
+  }
+
+  res.sendStatus(204);
+}
+
+export async function acceptGroupInvite(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const { groupId } = req.params;
+
+  try {
+    await groupModel.acceptGroupInvite(groupId, req.user.id);
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+
+    next(error);
+    return;
+  }
+
+  res.sendStatus(204);
+}
+
+export async function updateGroupName(
+  req: Request<{ groupId: string }, object, { groupName: string }>,
+  res: Response,
+  next: NextFunction
+) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const { groupId } = req.params;
+  const { groupName } = req.body;
+
+  try {
+    const updatedGroup = await groupModel.updateGroupName(groupId, req.user.id, groupName);
+
+    res.status(200).json({ group: updatedGroup });
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+
+    next(error);
+  }
 }
