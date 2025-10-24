@@ -90,3 +90,13 @@ export async function createMessage(
 
   res.status(201).json({ message: createdMessage });
 }
+
+export async function getNonFriendsOfUser(req: Request, res: Response) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const nonFriends = await friendshipModel.getAnonymousUsers(req.user.id);
+
+  res.status(200).json({ nonFriends });
+}
