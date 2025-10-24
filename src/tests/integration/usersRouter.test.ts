@@ -532,4 +532,96 @@ describe("usersRouter routes", () => {
       });
     });
   });
+
+  describe("get non-friends of user GET /users/me/anonymous", () => {
+    describe("given GET request", () => {
+      let userA: Omit<User, "password">;
+      let userB: Omit<User, "password">;
+      let userC: Omit<User, "password">;
+
+      beforeEach(async () => {
+        userA = await userModel.createUserRecord("userA", "12345");
+        userB = await userModel.createUserRecord("userB", "12345");
+        userC = await userModel.createUserRecord("userC", "12345");
+
+        const { id: userBFriendRequestId } = await friendshipModel.sendFriendRequest(userB.id, userA.id);
+        const { id: userCFriendRequestId } = await friendshipModel.sendFriendRequest(userC.id, userA.id);
+
+        await friendshipModel.acceptFriendRequest(userBFriendRequestId);
+        await friendshipModel.acceptFriendRequest(userCFriendRequestId);
+      });
+
+      it("should return userA's non-friends", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .get("/users/me/anonymous")
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as {
+          nonFriends: Omit<User, "password" | "lastSeen" | "isGuest">[];
+        };
+
+        expect(typedResponseBody.nonFriends).toHaveLength(0);
+      });
+
+      it("should return userB's non-friends", async () => {
+        expect.hasAssertions();
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const response = await request(app)
+          .get("/users/me/anonymous")
+          .auth(userBToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as {
+          nonFriends: Omit<User, "password" | "lastSeen" | "isGuest">[];
+        };
+
+        expect(typedResponseBody.nonFriends).toStrictEqual<Omit<User, "password" | "lastSeen" | "isGuest">[]>(
+          [
+            {
+              id: userC.id,
+              imageUrl: null,
+              username: "userC",
+            },
+          ]
+        );
+      });
+
+      it("should return return userC's non-friends", async () => {
+        expect.hasAssertions();
+
+        const userCToken = issueJwt(userC.id, "10m");
+
+        const response = await request(app)
+          .get("/users/me/anonymous")
+          .auth(userCToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as {
+          nonFriends: Omit<User, "password" | "lastSeen" | "isGuest">[];
+        };
+
+        expect(typedResponseBody.nonFriends).toStrictEqual<Omit<User, "password" | "lastSeen" | "isGuest">[]>(
+          [
+            {
+              id: userB.id,
+              imageUrl: null,
+              username: "userB",
+            },
+          ]
+        );
+      });
+    });
+  });
+
+  describe.todo("test updating user profile picture");
 });
