@@ -12,15 +12,17 @@ const usersRouter = Router();
 usersRouter.use(passport.authenticate("jwt", { session: false }));
 
 usersRouter.get("/me/friends", usersController.getUserFriends);
-usersRouter.get("/:id/messages", usersController.getTwoUsersMessages);
+usersRouter.get("/me/anonymous", usersController.getNonFriendsOfUser);
 
-usersRouter.post(
-  "/:id/messages",
-  upload.single("messageImage"),
-  validateFile(FileSchema),
-  validateBody(MessageContentSchema),
-  usersController.createMessage
-);
+usersRouter
+  .route("/:id/messages")
+  .get(usersController.getTwoUsersMessages)
+  .post(
+    upload.single("messageImage"),
+    validateFile(FileSchema),
+    validateBody(MessageContentSchema),
+    usersController.createMessage
+  );
 
 usersRouter.use("/me/groups", groupsRouter);
 
