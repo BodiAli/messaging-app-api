@@ -29,7 +29,7 @@ export const MessageContentSchema = z.strictObject({
   messageContent: z.string("Please provide a string content").trim().nonempty("Message cannot be empty."),
 });
 
-export const FileSchema = z.optional(
+export const OptionalFileSchema = z.optional(
   z.object({
     mimetype: z.string().startsWith("image/", { error: "File must be of type image." }),
     size: z.number().max(5242880, { error: "File cannot exceed 5MBs." }),
@@ -47,3 +47,5 @@ export const SendGroupInviteToUsers = z.strictObject({
     })
     .nonempty("At least 1 user id must be provided."),
 });
+
+export const RequiredFileSchema = OptionalFileSchema.nonoptional("File cannot be empty.");
