@@ -100,3 +100,36 @@ export async function getNonFriendsOfUser(req: Request, res: Response) {
 
   res.status(200).json({ nonFriends });
 }
+
+export async function updateUserProfilePicture(req: Request, res: Response, next: NextFunction) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const file = req.file;
+
+  if (!file) {
+    throw new Error("File object not found");
+  }
+
+  try {
+    const { secure_url } = await new Promise<UploadApiResponse>((resolve, reject) => {
+      cloudinary.uploader
+        .upload_stream({ resource_type: "image" }, (error, uploadResult) => {
+          if (error || !uploadResult) {
+            reject(error as Error);
+            return;
+          }
+
+          resolve(uploadResult);
+        })
+        .end(file.buffer);
+    });
+
+    const updatedUser = await userModel.updateUserImageUrl(req.user.id, secure_url);
+
+    res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    next(error);
+  }
+}
