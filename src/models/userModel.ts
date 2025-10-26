@@ -86,3 +86,19 @@ export async function updateUserRecordLastSeen(id: string) {
 
   return updatedUser;
 }
+
+export async function updateUserImageUrl(id: string, imageUrl: string) {
+  const updatedUser = await prisma.user.update({
+    where: {
+      id,
+    },
+    data: {
+      imageUrl,
+    },
+    omit: {
+      password: true,
+    },
+  });
+
+  return updatedUser;
+}
