@@ -623,5 +623,140 @@ describe("usersRouter routes", () => {
     });
   });
 
-  describe.todo("test updating user profile picture");
+  describe("update profile picture PATCH /users/me", () => {
+    describe("given invalid inputs", () => {
+      it("should return 400 status and error message when profileImage is not present", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .patch("/users/me")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          expect.objectContaining({
+            message: "File cannot be empty.",
+          }) as { message: string },
+        ]);
+      });
+
+      it("should return 400 status and error message when profileImage is not of type image", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .patch("/users/me")
+          .auth(currentUserToken, { type: "bearer" })
+          .attach("profileImage", buffer, { filename: "fileName", contentType: "application/json" })
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          expect.objectContaining({
+            message: "File must be of type image.",
+          }) as { message: string },
+        ]);
+      });
+
+      it("should return 400 status and error message when profileImage is larger than 5MBs", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const buffer = Buffer.alloc(1024 * 1024 * 5 + 1);
+
+        const response = await request(app)
+          .patch("/users/me")
+          .auth(currentUserToken, { type: "bearer" })
+          .attach("profileImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .expect("Content-type", /json/)
+          .expect(400);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          expect.objectContaining({
+            message: "File cannot exceed 5MBs.",
+          }) as { message: string },
+        ]);
+      });
+    });
+
+    describe("given rejected promise during upload", () => {
+      it("should return 500 status when an unexpected error occurs", async () => {
+        expect.hasAssertions();
+
+        vi.mocked(cloudinary.uploader.upload_stream).mockImplementationOnce(
+          (_options?: UploadApiOptions, cb?: UploadResponseCallback) => {
+            return {
+              end: () => {
+                if (cb) {
+                  cb({ http_code: 499, message: "FAILED", name: "TimeoutError" }, undefined);
+                }
+              },
+            } as UploadStream;
+          }
+        );
+
+        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .patch("/users/me")
+          .auth(currentUserToken, { type: "bearer" })
+          .attach("profileImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .expect(500);
+
+        expect(response.serverError).toBe(true);
+      });
+    });
+
+    describe("given valid profileImage", () => {
+      it("should return 200 status with updated user", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.createUserRecord("currentUser", "10m");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const buffer = Buffer.alloc(1024);
+
+        const response = await request(app)
+          .patch("/users/me")
+          .auth(currentUserToken, { type: "bearer" })
+          .attach("profileImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .expect("Content-type", /json/)
+          .expect(200);
+
+        const typedResponseBody = response.body as { user: Omit<User, "password"> };
+
+        expect(typedResponseBody.user).toStrictEqual<Omit<User, "password">>({
+          id: currentUser.id,
+          imageUrl: "imageUrl",
+          isGuest: false,
+          lastSeen: expect.any(String) as Date,
+          username: "currentUser",
+        });
+      });
+    });
+  });
 });
