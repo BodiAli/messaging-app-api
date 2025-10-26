@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express, { type NextFunction, type Request, type Response } from "express";
+import cors from "cors";
 import authRouter from "./routes/authRouter.js";
 import usersRouter from "./routes/usersRouter.js";
 import friendshipsRouter from "./routes/friendshipsRouter.js";
@@ -7,6 +8,8 @@ import notificationsRouter from "./routes/notificationsRouter.js";
 import "./config/passportConfig.js";
 
 const app = express();
+
+app.use(cors());
 
 app.use(express.json());
 
