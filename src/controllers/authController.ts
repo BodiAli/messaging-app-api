@@ -69,3 +69,11 @@ export async function logInAsGuest(_req: Request, res: Response) {
 
   res.json({ token, user: guestUser });
 }
+
+export function getUser(req: Request, res: Response) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  res.json({ user: req.user });
+}
