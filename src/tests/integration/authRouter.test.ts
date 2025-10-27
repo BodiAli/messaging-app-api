@@ -6,6 +6,7 @@ import type { User } from "../../generated/prisma/index.js";
 import type ResponseError from "../../types/responseError.js";
 import authRouter from "../../routes/authRouter.js";
 import { createUserRecord, getUserRecordById, getUserRecordByUsername } from "../../models/userModel.js";
+import issueJwt from "../../lib/issueJwt.js";
 import "../../config/passportConfig.js";
 
 const app = express();
@@ -16,7 +17,7 @@ app.use("/auth", authRouter);
 
 interface ResponseSuccess {
   token: string;
-  user: User;
+  user: Omit<User, "password">;
 }
 
 describe("authRouter routes", () => {
@@ -186,6 +187,48 @@ describe("authRouter routes", () => {
         expect(typedResponseBody.user.isGuest).toBe(true);
         expect(typedResponseBody.user.username).toBe("guest-user");
         expect(typedResponseBody.user.imageUrl).toBeNull();
+      });
+    });
+  });
+
+  describe("get user info GET /auth/get-user", () => {
+    describe("given invalid JWT token", () => {
+      it("should return 401 status", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt("invalidId", "10m");
+
+        const response = await request(app)
+          .get("/auth/get-user")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect(401);
+
+        expect(response.unauthorized).toBe(true);
+      });
+    });
+
+    describe("given valid JWT token", () => {
+      it("should return 200 status and user object", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await createUserRecord("currentUser", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get("/auth/get-user")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect(200);
+
+        const typedResponseBody = response.body as Pick<ResponseSuccess, "user">;
+
+        expect(typedResponseBody.user).toStrictEqual<ResponseSuccess["user"]>({
+          id: currentUser.id,
+          imageUrl: null,
+          isGuest: false,
+          lastSeen: expect.any(String) as Date,
+          username: "currentUser",
+        });
       });
     });
   });
