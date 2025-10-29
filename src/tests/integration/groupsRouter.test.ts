@@ -72,6 +72,30 @@ describe("groupsRouter routes", () => {
   });
 
   describe("create group POST /users/me/groups", () => {
+    describe("given guest user", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post("/users/me/groups")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          {
+            message: "You must have an account to complete this request.",
+          },
+        ]);
+      });
+    });
+
     describe("given invalid inputs", () => {
       it("should return 400 status with errors", async () => {
         expect.hasAssertions();
@@ -116,6 +140,32 @@ describe("groupsRouter routes", () => {
           id: expect.any(String) as string,
           name: "new group",
         });
+      });
+    });
+  });
+
+  describe("all requests for /users/me/groups/:groupId", () => {
+    describe("given guest user", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get("/users/me/groups/groupId")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          {
+            message: "You must have an account to complete this request.",
+          },
+        ]);
       });
     });
   });
@@ -182,6 +232,32 @@ describe("groupsRouter routes", () => {
             username: "userA",
           },
         });
+      });
+    });
+  });
+
+  describe("all requests for /users/me/groups/:groupId/notifications", () => {
+    describe("given guest user", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get("/users/me/groups/groupId/notifications")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          {
+            message: "You must have an account to complete this request.",
+          },
+        ]);
       });
     });
   });
@@ -541,6 +617,30 @@ describe("groupsRouter routes", () => {
   });
 
   describe("remove group member DELETE /users/me/groups/:groupId/members/:memberId", () => {
+    describe("given guest user", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .delete("/users/me/groups/groupId/members/memberId")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          {
+            message: "You must have an account to complete this request.",
+          },
+        ]);
+      });
+    });
+
     describe("given non-existing group id", () => {
       it("should return 404 status with error message", async () => {
         expect.hasAssertions();

@@ -30,6 +30,30 @@ describe("friendshipsRouter routes", () => {
       });
     });
 
+    describe("given guest user", () => {
+      it("should return 403 status and an error message", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get("/friendships")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          {
+            message: "You must have an account to complete this request.",
+          },
+        ]);
+      });
+    });
+
     describe("given valid JWT", () => {
       it("should not return 401 status", async () => {
         expect.hasAssertions();

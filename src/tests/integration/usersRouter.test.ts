@@ -156,6 +156,32 @@ describe("usersRouter routes", () => {
     });
   });
 
+  describe("all requests for /users/:id/messages", () => {
+    describe("given guest user", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get("/users/userId/messages")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          {
+            message: "You must have an account to complete this request.",
+          },
+        ]);
+      });
+    });
+  });
+
   describe("get current user's messages with another user GET /users/:id/messages", () => {
     describe("given non-existing user id as param", () => {
       it("should return 404 status with error message", async () => {
@@ -624,6 +650,30 @@ describe("usersRouter routes", () => {
   });
 
   describe("update profile picture PATCH /users/me", () => {
+    describe("given guest user", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .patch("/users/me")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
+          {
+            message: "You must have an account to complete this request.",
+          },
+        ]);
+      });
+    });
+
     describe("given invalid inputs", () => {
       it("should return 400 status and error message when profileImage is not present", async () => {
         expect.hasAssertions();
