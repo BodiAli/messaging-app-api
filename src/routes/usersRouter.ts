@@ -3,9 +3,10 @@ import passport from "passport";
 import upload from "../config/multerConfig.js";
 import validateBody from "../middlewares/validateBody.js";
 import validateFile from "../middlewares/validateFile.js";
-import * as usersController from "../controllers/usersController.js";
 import { OptionalFileSchema, MessageContentSchema, RequiredFileSchema } from "../lib/zodSchemas.js";
 import groupsRouter from "./groupsRouter.js";
+import unauthorizeGuest from "../middlewares/unauthorizeGuest.js";
+import * as usersController from "../controllers/usersController.js";
 
 const usersRouter = Router();
 
@@ -16,6 +17,7 @@ usersRouter.get("/me/anonymous", usersController.getNonFriendsOfUser);
 
 usersRouter.patch(
   "/me",
+  unauthorizeGuest,
   upload.single("profileImage"),
   validateFile(RequiredFileSchema),
   usersController.updateUserProfilePicture
@@ -23,6 +25,7 @@ usersRouter.patch(
 
 usersRouter
   .route("/:id/messages")
+  .all(unauthorizeGuest)
   .get(usersController.getTwoUsersMessages)
   .post(
     upload.single("messageImage"),

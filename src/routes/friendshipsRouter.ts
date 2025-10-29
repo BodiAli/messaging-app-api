@@ -1,10 +1,13 @@
 import { Router } from "express";
 import passport from "passport";
+import unauthorizeGuest from "../middlewares/unauthorizeGuest.js";
 import * as friendshipsController from "../controllers/friendshipsController.js";
 
 const friendshipsRouter = Router();
 
 friendshipsRouter.use(passport.authenticate("jwt", { session: false }));
+
+friendshipsRouter.use(unauthorizeGuest);
 
 friendshipsRouter.post("/", friendshipsController.createFriendRequest);
 
