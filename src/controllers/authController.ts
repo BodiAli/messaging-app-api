@@ -1,9 +1,9 @@
-import type { NextFunction, Request, RequestHandler, Response } from "express";
 import bcrypt from "bcrypt";
+import passport from "passport";
 import * as userModel from "../models/userModel.js";
 import { Prisma, type User } from "../generated/prisma/index.js";
 import issueJwt from "../lib/issueJwt.js";
-import passport from "passport";
+import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 export async function createUser(
   req: Request<object, object, { username: string; password: string; confirmPassword: string }>,

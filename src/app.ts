@@ -1,5 +1,9 @@
 import "dotenv/config";
-import express, { type NextFunction, type Request, type Response } from "express";
+import express, {
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import cors from "cors";
 import authRouter from "./routes/authRouter.js";
 import usersRouter from "./routes/usersRouter.js";

@@ -1,9 +1,9 @@
-import type { NextFunction, Request, Response } from "express";
-import type { UploadApiResponse } from "cloudinary";
 import cloudinary from "../config/cloudinaryConfig.js";
 import * as friendshipModel from "../models/friendshipModel.js";
 import * as messageModel from "../models/messageModel.js";
 import * as userModel from "../models/userModel.js";
+import type { UploadApiResponse } from "cloudinary";
+import type { NextFunction, Request, Response } from "express";
 
 export async function getUserFriends(req: Request, res: Response) {
   if (!req.user) {

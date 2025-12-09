@@ -1,7 +1,7 @@
-import type { NextFunction, Request, Response } from "express";
 import * as groupModel from "../models/groupModel.js";
 import CustomHttpStatusError from "../errors/httpStatusError.js";
 import { Prisma } from "../generated/prisma/index.js";
+import type { NextFunction, Request, Response } from "express";
 
 export async function getUserGroups(req: Request, res: Response) {
   if (!req.user) {

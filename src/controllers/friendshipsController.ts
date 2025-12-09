@@ -1,7 +1,7 @@
-import type { Request, Response } from "express";
 import { Prisma } from "../generated/prisma/index.js";
 import * as friendshipModel from "../models/friendshipModel.js";
 import * as userModel from "../models/userModel.js";
+import type { Request, Response } from "express";
 
 export async function createFriendRequest(
   req: Request<object, object, { receiverId: string }>,

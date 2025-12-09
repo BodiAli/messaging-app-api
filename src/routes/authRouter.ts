@@ -1,8 +1,8 @@
 import { Router, type RequestHandler } from "express";
+import passport from "passport";
 import * as authController from "../controllers/authController.js";
 import validateBody from "../middlewares/validateBody.js";
 import { UserSignUpSchema, UserLogInSchema } from "../lib/zodSchemas.js";
-import passport from "passport";
 
 const authRouter = Router();
 

@@ -1,10 +1,10 @@
 import { Router } from "express";
 import passport from "passport";
+import groupsRouter from "./groupsRouter.js";
 import upload from "../config/multerConfig.js";
 import validateBody from "../middlewares/validateBody.js";
 import validateFile from "../middlewares/validateFile.js";
 import { OptionalFileSchema, MessageContentSchema, RequiredFileSchema } from "../lib/zodSchemas.js";
-import groupsRouter from "./groupsRouter.js";
 import unauthorizeGuest from "../middlewares/unauthorizeGuest.js";
 import * as usersController from "../controllers/usersController.js";
 

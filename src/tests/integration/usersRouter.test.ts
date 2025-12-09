@@ -1,15 +1,15 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
 import express from "express";
 import request from "supertest";
-import type { UploadStream, UploadApiOptions, UploadApiResponse, UploadResponseCallback } from "cloudinary";
 import cloudinary from "../../config/cloudinaryConfig.js";
 import usersRouter from "../../routes/usersRouter.js";
 import issueJwt from "../../lib/issueJwt.js";
-import type { Message, User } from "../../generated/prisma/index.js";
-import type ResponseError from "../../types/responseError.js";
 import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import * as messageModel from "../../models/messageModel.js";
+import type ResponseError from "../../types/responseError.js";
+import type { Message, User } from "../../generated/prisma/index.js";
+import type { UploadStream, UploadApiOptions, UploadApiResponse, UploadResponseCallback } from "cloudinary";
 import "../../config/passportConfig.js";
 
 const app = express();

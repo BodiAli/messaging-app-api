@@ -1,5 +1,5 @@
-import CustomHttpStatusError from "../errors/httpStatusError.js";
 import prisma from "./prismaClient/prisma.js";
+import CustomHttpStatusError from "../errors/httpStatusError.js";
 
 export async function createGroup(groupName: string, adminId: string) {
   const createdGroup = await prisma.groupChat.create({

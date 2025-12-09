@@ -1,5 +1,5 @@
-import type { Request, Response, NextFunction } from "express";
 import * as z from "zod";
+import type { Request, Response, NextFunction } from "express";
 
 export default function validateBody(Schema: z.ZodObject) {
   return (req: Request, res: Response, next: NextFunction) => {

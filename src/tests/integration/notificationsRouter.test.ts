@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import express from "express";
 import request from "supertest";
-import type { User } from "../../generated/prisma/index.js";
 import notificationsRouter from "../../routes/notificationsRouter.js";
 import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import * as groupModel from "../../models/groupModel.js";
 import issueJwt from "../../lib/issueJwt.js";
+import type { User } from "../../generated/prisma/index.js";
 import "../../config/passportConfig.js";
 import type { UserNotifications } from "../../types/userNotifications.js";
 

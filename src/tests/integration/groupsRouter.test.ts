@@ -2,10 +2,10 @@ import express from "express";
 import { beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import usersRouter from "../../routes/usersRouter.js";
-import type { GroupChat, User } from "../../generated/prisma/index.js";
 import * as userModel from "../../models/userModel.js";
 import * as groupModel from "../../models/groupModel.js";
 import issueJwt from "../../lib/issueJwt.js";
+import type { GroupChat, User } from "../../generated/prisma/index.js";
 import type ResponseError from "../../types/responseError.js";
 import "../../config/passportConfig.js";
 

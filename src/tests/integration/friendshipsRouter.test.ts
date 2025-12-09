@@ -3,9 +3,9 @@ import express from "express";
 import request from "supertest";
 import friendshipsRouter from "../../routes/friendshipsRouter.js";
 import issueJwt from "../../lib/issueJwt.js";
-import type ResponseError from "../../types/responseError.js";
 import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
+import type ResponseError from "../../types/responseError.js";
 import "../../config/passportConfig.js";
 
 const app = express();

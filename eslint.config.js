@@ -1,10 +1,10 @@
 import js from "@eslint/js";
-import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 import globals from "globals";
 import vitest from "@vitest/eslint-plugin";
 import eslintConfigPrettier from "eslint-config-prettier/flat";
-import { globalIgnores } from "eslint/config";
+import { importX } from "eslint-plugin-import-x";
+import { globalIgnores, defineConfig } from "eslint/config";
 
 export default defineConfig([
   globalIgnores(["dist", "./src/generated"]),
@@ -14,6 +14,8 @@ export default defineConfig([
       js.configs.recommended,
       tseslint.configs.strictTypeChecked,
       tseslint.configs.stylisticTypeChecked,
+      importX.flatConfigs.recommended,
+      importX.flatConfigs.typescript,
     ],
     languageOptions: {
       globals: {
@@ -26,6 +28,21 @@ export default defineConfig([
       },
     },
     rules: {
+      "import-x/order": [
+        "error",
+        {
+          groups: [
+            "builtin",
+            "external",
+            "internal",
+            "index",
+            "sibling",
+            "parent",
+            "object",
+            "type",
+          ],
+        },
+      ],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -33,8 +50,15 @@ export default defineConfig([
           varsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
-      "@typescript-eslint/no-empty-object-type": ["error", { allowInterfaces: "with-single-extends" }],
+      "@typescript-eslint/restrict-template-expressions": [
+        "error",
+        { allowNumber: true },
+      ],
+      "@typescript-eslint/no-empty-object-type": [
+        "error",
+        { allowInterfaces: "with-single-extends" },
+      ],
+      "import-x/no-named-as-default-member": "off",
     },
   },
   eslintConfigPrettier,

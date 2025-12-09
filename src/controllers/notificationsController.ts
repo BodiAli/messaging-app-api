@@ -1,5 +1,5 @@
-import type { Request, Response } from "express";
 import * as notificationsModel from "../models/notificationModel.js";
+import type { Request, Response } from "express";
 
 export async function getUserNotifications(req: Request, res: Response) {
   if (!req.user) {
