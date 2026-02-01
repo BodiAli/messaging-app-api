@@ -32,6 +32,17 @@ export async function getTwoUsersMessages(
     return;
   }
 
+  const friendRequestRecord = await friendshipModel.getFriendRequestRecord(
+    req.user.id,
+    id,
+  );
+  const friendRequestStatus = friendRequestRecord
+    ? {
+        type: friendRequestRecord.status,
+        senderId: friendRequestRecord.senderId,
+      }
+    : null;
+
   const messages = await messageModel.getMessagesBetweenTwoUsers(
     req.user.id,
     id,
@@ -44,6 +55,7 @@ export async function getTwoUsersMessages(
       imageUrl: user.imageUrl,
       lastSeen: user.lastSeen,
     },
+    friendRequestStatus,
   });
 }
 
