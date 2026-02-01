@@ -15,29 +15,42 @@ export async function getUserFriends(req: Request, res: Response) {
   res.status(200).json({ friends });
 }
 
-export async function getTwoUsersMessages(req: Request<{ id: string }>, res: Response) {
+export async function getTwoUsersMessages(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
   if (!req.user) {
     throw new Error("User not found");
   }
 
   const { id } = req.params;
 
-  const doesUserExist = await userModel.getUserRecordById(id);
+  const user = await userModel.getUserRecordById(id);
 
-  if (!doesUserExist) {
+  if (!user) {
     res.status(404).json({ errors: [{ message: "User not found." }] });
     return;
   }
 
-  const messages = await messageModel.getMessagesBetweenTwoUsers(req.user.id, id);
+  const messages = await messageModel.getMessagesBetweenTwoUsers(
+    req.user.id,
+    id,
+  );
 
-  res.json({ messages });
+  res.json({
+    messages,
+    user: {
+      username: user.username,
+      imageUrl: user.imageUrl,
+      lastSeen: user.lastSeen,
+    },
+  });
 }
 
 export async function createMessage(
   req: Request<{ id: string }, object, { messageContent: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   if (!req.user) {
     throw new Error("User not found");
@@ -49,7 +62,9 @@ export async function createMessage(
   const doesUserExist = await userModel.getUserRecordById(receiverId);
 
   if (!doesUserExist) {
-    res.status(404).json({ errors: [{ message: "Cannot find user to send message to." }] });
+    res
+      .status(404)
+      .json({ errors: [{ message: "Cannot find user to send message to." }] });
     return;
   }
 
@@ -59,22 +74,27 @@ export async function createMessage(
 
   if (file) {
     try {
-      const { secure_url } = await new Promise<UploadApiResponse>((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream({ resource_type: "image" }, (error, uploadResult) => {
-            if (error) {
-              reject(error as Error);
-              return;
-            }
+      const { secure_url } = await new Promise<UploadApiResponse>(
+        (resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream(
+              { resource_type: "image" },
+              (error, uploadResult) => {
+                if (error) {
+                  reject(error as Error);
+                  return;
+                }
 
-            if (!uploadResult) {
-              throw new Error("Upload result not found");
-            }
+                if (!uploadResult) {
+                  throw new Error("Upload result not found");
+                }
 
-            resolve(uploadResult);
-          })
-          .end(file.buffer);
-      });
+                resolve(uploadResult);
+              },
+            )
+            .end(file.buffer);
+        },
+      );
 
       imageUrl = secure_url;
     } catch (error) {
@@ -83,10 +103,14 @@ export async function createMessage(
     }
   }
 
-  const createdMessage = await messageModel.sendMessageFromUserToUser(req.user.id, receiverId, {
-    content: messageContent,
-    imageUrl,
-  });
+  const createdMessage = await messageModel.sendMessageFromUserToUser(
+    req.user.id,
+    receiverId,
+    {
+      content: messageContent,
+      imageUrl,
+    },
+  );
 
   res.status(201).json({ message: createdMessage });
 }
@@ -101,7 +125,11 @@ export async function getNonFriendsOfUser(req: Request, res: Response) {
   res.status(200).json({ nonFriends });
 }
 
-export async function updateUserProfilePicture(req: Request, res: Response, next: NextFunction) {
+export async function updateUserProfilePicture(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   if (!req.user) {
     throw new Error("User not found");
   }
@@ -113,20 +141,25 @@ export async function updateUserProfilePicture(req: Request, res: Response, next
   }
 
   try {
-    const { secure_url } = await new Promise<UploadApiResponse>((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream({ resource_type: "image" }, (error, uploadResult) => {
-          if (error || !uploadResult) {
-            reject(error as Error);
-            return;
-          }
+    const { secure_url } = await new Promise<UploadApiResponse>(
+      (resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream({ resource_type: "image" }, (error, uploadResult) => {
+            if (error || !uploadResult) {
+              reject(error as Error);
+              return;
+            }
 
-          resolve(uploadResult);
-        })
-        .end(file.buffer);
-    });
+            resolve(uploadResult);
+          })
+          .end(file.buffer);
+      },
+    );
 
-    const updatedUser = await userModel.updateUserImageUrl(req.user.id, secure_url);
+    const updatedUser = await userModel.updateUserImageUrl(
+      req.user.id,
+      secure_url,
+    );
 
     res.status(200).json({ user: updatedUser });
   } catch (error) {
