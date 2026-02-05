@@ -9,7 +9,12 @@ import * as friendshipModel from "../../models/friendshipModel.js";
 import * as messageModel from "../../models/messageModel.js";
 import type ResponseError from "../../types/responseError.js";
 import type { Message, User } from "../../generated/prisma/index.js";
-import type { UploadStream, UploadApiOptions, UploadApiResponse, UploadResponseCallback } from "cloudinary";
+import type {
+  UploadStream,
+  UploadApiOptions,
+  UploadApiResponse,
+  UploadResponseCallback,
+} from "cloudinary";
 import "../../config/passportConfig.js";
 
 const app = express();
@@ -22,17 +27,20 @@ vi.mock(import("../../config/cloudinaryConfig.js"), () => {
   return {
     default: {
       uploader: {
-        upload_stream: vi.fn<(arg1?: UploadApiOptions, arg2?: UploadResponseCallback) => UploadStream>(
-          (_options?: UploadApiOptions, cb?: UploadResponseCallback) => {
-            return {
-              end: () => {
-                if (cb) {
-                  cb(undefined, { secure_url: "imageUrl" } as UploadApiResponse);
-                }
-              },
-            } as UploadStream;
-          }
-        ) as typeof cloudinary.uploader.upload_stream,
+        upload_stream: vi.fn<
+          (
+            arg1?: UploadApiOptions,
+            arg2?: UploadResponseCallback,
+          ) => UploadStream
+        >((_options?: UploadApiOptions, cb?: UploadResponseCallback) => {
+          return {
+            end: () => {
+              if (cb) {
+                cb(undefined, { secure_url: "imageUrl" } as UploadApiResponse);
+              }
+            },
+          } as UploadStream;
+        }) as typeof cloudinary.uploader.upload_stream,
       },
     } as typeof cloudinary,
   };
@@ -58,7 +66,9 @@ describe("usersRouter routes", () => {
 
         const token = issueJwt(createdUser.id, "10m");
 
-        const response = await request(app).get("/users").auth(token, { type: "bearer" });
+        const response = await request(app)
+          .get("/users")
+          .auth(token, { type: "bearer" });
 
         expect(response.unauthorized).toBe(false);
       });
@@ -76,8 +86,14 @@ describe("usersRouter routes", () => {
         clareUser = await userModel.createUserRecord("clare", "12345");
         bodiUser = await userModel.createUserRecord("bodi", "12345");
 
-        const { id: johnRequestId } = await friendshipModel.sendFriendRequest(johnUser.id, bodiUser.id);
-        const { id: clareRequestId } = await friendshipModel.sendFriendRequest(clareUser.id, bodiUser.id);
+        const { id: johnRequestId } = await friendshipModel.sendFriendRequest(
+          johnUser.id,
+          bodiUser.id,
+        );
+        const { id: clareRequestId } = await friendshipModel.sendFriendRequest(
+          clareUser.id,
+          bodiUser.id,
+        );
 
         await friendshipModel.acceptFriendRequest(johnRequestId);
         await friendshipModel.acceptFriendRequest(clareRequestId);
@@ -94,7 +110,9 @@ describe("usersRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedBodiResponse = bodiResponse.body as { friends: Omit<User, "password">[] };
+        const typedBodiResponse = bodiResponse.body as {
+          friends: Omit<User, "password">[];
+        };
 
         expect(typedBodiResponse.friends).toStrictEqual([
           expect.objectContaining({
@@ -121,7 +139,9 @@ describe("usersRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedJohnResponse = johnResponse.body as { friends: Omit<User, "password">[] };
+        const typedJohnResponse = johnResponse.body as {
+          friends: Omit<User, "password">[];
+        };
 
         expect(typedJohnResponse.friends).toStrictEqual([
           expect.objectContaining({
@@ -143,7 +163,9 @@ describe("usersRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedClareResponse = clareResponse.body as { friends: Omit<User, "password">[] };
+        const typedClareResponse = clareResponse.body as {
+          friends: Omit<User, "password">[];
+        };
 
         expect(typedClareResponse.friends).toStrictEqual([
           expect.objectContaining({
@@ -161,7 +183,10 @@ describe("usersRouter routes", () => {
       it("should return 403 status with error message", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+        const currentUser = await userModel.getOrCreateUserRecord(
+          "guest",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -173,11 +198,13 @@ describe("usersRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          {
-            message: "You must have an account to complete this request.",
-          },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            {
+              message: "You must have an account to complete this request.",
+            },
+          ],
+        );
       });
     });
   });
@@ -280,7 +307,133 @@ describe("usersRouter routes", () => {
 
         const typedResponseBody2 = response2.body as { messages: Message[] };
 
-        expect(typedResponseBody1.messages).toStrictEqual(typedResponseBody2.messages);
+        expect(typedResponseBody1.messages).toStrictEqual(
+          typedResponseBody2.messages,
+        );
+      });
+
+      it("should return the requested user's username, imageUrl", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+        await messageModel.sendMessageFromUserToUser(userB.id, userA.id, {
+          content: "Hello from userB to userA",
+          imageUrl: null,
+        });
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .get(`/users/${userB.id}/messages`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+        const typedResponseBody = response.body as {
+          user: Pick<User, "username" | "imageUrl">;
+        };
+
+        expect(typedResponseBody.user).toMatchObject<
+          Pick<User, "username" | "imageUrl">
+        >({
+          username: userB.username,
+          imageUrl: userB.imageUrl,
+        });
+      });
+    });
+
+    describe("given requested user's chat is a friend", () => {
+      it("should return the requested user's lastSeen", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+        const { id: friendRequestId } = await friendshipModel.sendFriendRequest(
+          userB.id,
+          userA.id,
+        );
+        await friendshipModel.acceptFriendRequest(friendRequestId);
+        await messageModel.sendMessageFromUserToUser(userB.id, userA.id, {
+          content: "Hello from userB to userA",
+          imageUrl: null,
+        });
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .get(`/users/${userB.id}/messages`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+        interface ResponseBodyType {
+          user: Pick<User, "username" | "imageUrl"> & { lastSeen: string };
+        }
+        const typedResponseBody = response.body as ResponseBodyType;
+
+        expect(typedResponseBody.user).toStrictEqual<ResponseBodyType["user"]>({
+          username: userB.username,
+          imageUrl: userB.imageUrl,
+          lastSeen: userB.lastSeen.toISOString(),
+        });
+      });
+    });
+
+    describe("given requested user's chat is not a friend", () => {
+      it("should return the requested user's lastSeen as null", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+        await messageModel.sendMessageFromUserToUser(userB.id, userA.id, {
+          content: "Hello from userB to userA",
+          imageUrl: null,
+        });
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .get(`/users/${userB.id}/messages`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+        interface ResponseBodyType {
+          user: Pick<User, "username" | "imageUrl"> & { lastSeen: null };
+        }
+        const typedResponseBody = response.body as ResponseBodyType;
+
+        expect(typedResponseBody.user).toStrictEqual<ResponseBodyType["user"]>({
+          username: userB.username,
+          imageUrl: userB.imageUrl,
+          lastSeen: null,
+        });
+      });
+    });
+
+    describe("given requested user's chat friendship status is pending", () => {
+      it("should return the requested user's lastSeen as null", async () => {
+        expect.hasAssertions();
+
+        const userA = await userModel.createUserRecord("userA", "12345");
+        const userB = await userModel.createUserRecord("userB", "12345");
+        await friendshipModel.sendFriendRequest(userB.id, userA.id);
+        await messageModel.sendMessageFromUserToUser(userB.id, userA.id, {
+          content: "Hello from userB to userA",
+          imageUrl: null,
+        });
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .get(`/users/${userB.id}/messages`)
+          .auth(userAToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+        interface ResponseBodyType {
+          user: Pick<User, "username" | "imageUrl"> & { lastSeen: null };
+        }
+        const typedResponseBody = response.body as ResponseBodyType;
+
+        expect(typedResponseBody.user).toStrictEqual<ResponseBodyType["user"]>({
+          username: userB.username,
+          imageUrl: userB.imageUrl,
+          lastSeen: null,
+        });
       });
     });
   });
@@ -326,7 +479,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .field("messageContent", "Hello from userB to userA")
           .expect("Content-type", /json/)
           .expect(400);
@@ -351,7 +507,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .attach("messageImage", buffer, { filename: "fileName", contentType: "application/json" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "application/json",
+          })
           .field("messageContent", "Hello from userB to userA")
           .expect("Content-type", /json/)
           .expect(400);
@@ -376,7 +535,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .field("messageContent", "")
           .expect("Content-type", /json/)
           .expect(400);
@@ -432,7 +594,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .field("messageContent", "Hello from userB to userA")
           .expect("Content-type", /json/)
           .expect(201);
@@ -459,7 +624,10 @@ describe("usersRouter routes", () => {
         const userA = await userModel.createUserRecord("userA", "12345");
         const userB = await userModel.createUserRecord("userB", "12345");
 
-        const friendRequest = await friendshipModel.sendFriendRequest(userB.id, userA.id);
+        const friendRequest = await friendshipModel.sendFriendRequest(
+          userB.id,
+          userA.id,
+        );
 
         await friendshipModel.acceptFriendRequest(friendRequest.id);
 
@@ -470,7 +638,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .field("messageContent", "Hello from userB to userA")
           .expect("Content-type", /json/)
           .expect(201);
@@ -504,7 +675,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .field("messageContent", "Hello from userB to userA")
           .expect("Content-type", /json/)
           .expect(201);
@@ -533,11 +707,14 @@ describe("usersRouter routes", () => {
             return {
               end: () => {
                 if (cb) {
-                  cb({ http_code: 499, message: "FAILED", name: "TimeoutError" }, undefined);
+                  cb(
+                    { http_code: 499, message: "FAILED", name: "TimeoutError" },
+                    undefined,
+                  );
                 }
               },
             } as UploadStream;
-          }
+          },
         );
 
         const userA = await userModel.createUserRecord("userA", "12345");
@@ -550,7 +727,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .post(`/users/${userA.id}/messages`)
           .auth(userBToken, { type: "bearer" })
-          .attach("messageImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .field("messageContent", "Hello from userB to userA")
           .expect(500);
 
@@ -570,8 +750,10 @@ describe("usersRouter routes", () => {
         userB = await userModel.createUserRecord("userB", "12345");
         userC = await userModel.createUserRecord("userC", "12345");
 
-        const { id: userBFriendRequestId } = await friendshipModel.sendFriendRequest(userB.id, userA.id);
-        const { id: userCFriendRequestId } = await friendshipModel.sendFriendRequest(userC.id, userA.id);
+        const { id: userBFriendRequestId } =
+          await friendshipModel.sendFriendRequest(userB.id, userA.id);
+        const { id: userCFriendRequestId } =
+          await friendshipModel.sendFriendRequest(userC.id, userA.id);
 
         await friendshipModel.acceptFriendRequest(userBFriendRequestId);
         await friendshipModel.acceptFriendRequest(userCFriendRequestId);
@@ -610,15 +792,15 @@ describe("usersRouter routes", () => {
           nonFriends: Omit<User, "password" | "lastSeen" | "isGuest">[];
         };
 
-        expect(typedResponseBody.nonFriends).toStrictEqual<Omit<User, "password" | "lastSeen" | "isGuest">[]>(
-          [
-            {
-              id: userC.id,
-              imageUrl: null,
-              username: "userC",
-            },
-          ]
-        );
+        expect(typedResponseBody.nonFriends).toStrictEqual<
+          Omit<User, "password" | "lastSeen" | "isGuest">[]
+        >([
+          {
+            id: userC.id,
+            imageUrl: null,
+            username: "userC",
+          },
+        ]);
       });
 
       it("should return return userC's non-friends", async () => {
@@ -636,15 +818,15 @@ describe("usersRouter routes", () => {
           nonFriends: Omit<User, "password" | "lastSeen" | "isGuest">[];
         };
 
-        expect(typedResponseBody.nonFriends).toStrictEqual<Omit<User, "password" | "lastSeen" | "isGuest">[]>(
-          [
-            {
-              id: userB.id,
-              imageUrl: null,
-              username: "userB",
-            },
-          ]
-        );
+        expect(typedResponseBody.nonFriends).toStrictEqual<
+          Omit<User, "password" | "lastSeen" | "isGuest">[]
+        >([
+          {
+            id: userB.id,
+            imageUrl: null,
+            username: "userB",
+          },
+        ]);
       });
     });
   });
@@ -654,7 +836,10 @@ describe("usersRouter routes", () => {
       it("should return 403 status with error message", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+        const currentUser = await userModel.getOrCreateUserRecord(
+          "guest",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -666,11 +851,13 @@ describe("usersRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          {
-            message: "You must have an account to complete this request.",
-          },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            {
+              message: "You must have an account to complete this request.",
+            },
+          ],
+        );
       });
     });
 
@@ -678,7 +865,10 @@ describe("usersRouter routes", () => {
       it("should return 400 status and error message when profileImage is not present", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+        const currentUser = await userModel.createUserRecord(
+          "currentUser",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -690,17 +880,22 @@ describe("usersRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          expect.objectContaining({
-            message: "File cannot be empty.",
-          }) as { message: string },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            expect.objectContaining({
+              message: "File cannot be empty.",
+            }) as { message: string },
+          ],
+        );
       });
 
       it("should return 400 status and error message when profileImage is not of type image", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+        const currentUser = await userModel.createUserRecord(
+          "currentUser",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -709,23 +904,31 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .patch("/users/me")
           .auth(currentUserToken, { type: "bearer" })
-          .attach("profileImage", buffer, { filename: "fileName", contentType: "application/json" })
+          .attach("profileImage", buffer, {
+            filename: "fileName",
+            contentType: "application/json",
+          })
           .expect("Content-type", /json/)
           .expect(400);
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          expect.objectContaining({
-            message: "File must be of type image.",
-          }) as { message: string },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            expect.objectContaining({
+              message: "File must be of type image.",
+            }) as { message: string },
+          ],
+        );
       });
 
       it("should return 400 status and error message when profileImage is larger than 5MBs", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+        const currentUser = await userModel.createUserRecord(
+          "currentUser",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -734,17 +937,22 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .patch("/users/me")
           .auth(currentUserToken, { type: "bearer" })
-          .attach("profileImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("profileImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .expect("Content-type", /json/)
           .expect(400);
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          expect.objectContaining({
-            message: "File cannot exceed 5MBs.",
-          }) as { message: string },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            expect.objectContaining({
+              message: "File cannot exceed 5MBs.",
+            }) as { message: string },
+          ],
+        );
       });
     });
 
@@ -757,14 +965,20 @@ describe("usersRouter routes", () => {
             return {
               end: () => {
                 if (cb) {
-                  cb({ http_code: 499, message: "FAILED", name: "TimeoutError" }, undefined);
+                  cb(
+                    { http_code: 499, message: "FAILED", name: "TimeoutError" },
+                    undefined,
+                  );
                 }
               },
             } as UploadStream;
-          }
+          },
         );
 
-        const currentUser = await userModel.createUserRecord("currentUser", "12345");
+        const currentUser = await userModel.createUserRecord(
+          "currentUser",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -773,7 +987,10 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .patch("/users/me")
           .auth(currentUserToken, { type: "bearer" })
-          .attach("profileImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("profileImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .expect(500);
 
         expect(response.serverError).toBe(true);
@@ -784,7 +1001,10 @@ describe("usersRouter routes", () => {
       it("should return 200 status with updated user", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.createUserRecord("currentUser", "10m");
+        const currentUser = await userModel.createUserRecord(
+          "currentUser",
+          "10m",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -793,11 +1013,16 @@ describe("usersRouter routes", () => {
         const response = await request(app)
           .patch("/users/me")
           .auth(currentUserToken, { type: "bearer" })
-          .attach("profileImage", buffer, { filename: "fileName", contentType: "image/png" })
+          .attach("profileImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedResponseBody = response.body as { user: Omit<User, "password"> };
+        const typedResponseBody = response.body as {
+          user: Omit<User, "password">;
+        };
 
         expect(typedResponseBody.user).toStrictEqual<Omit<User, "password">>({
           id: currentUser.id,

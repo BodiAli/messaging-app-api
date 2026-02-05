@@ -53,7 +53,7 @@ export async function getTwoUsersMessages(
     user: {
       username: user.username,
       imageUrl: user.imageUrl,
-      lastSeen: user.lastSeen,
+      lastSeen: friendRequestStatus?.type === "ACCEPTED" ? user.lastSeen : null,
     },
     friendRequestStatus,
   });
