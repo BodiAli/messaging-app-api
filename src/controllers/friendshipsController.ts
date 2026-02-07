@@ -5,7 +5,7 @@ import type { Request, Response } from "express";
 
 export async function createFriendRequest(
   req: Request<object, object, { receiverId: string }>,
-  res: Response
+  res: Response,
 ) {
   if (!req.user) {
     throw new Error("User undefined");
@@ -13,12 +13,21 @@ export async function createFriendRequest(
 
   const { receiverId } = req.body;
 
-  const existingFriendRequest = await friendshipModel.getFriendRequestRecord(req.user.id, receiverId);
+  const existingFriendRequest = await friendshipModel.getFriendRequestRecord(
+    req.user.id,
+    receiverId,
+  );
 
   if (existingFriendRequest) {
     res
       .status(409)
-      .json({ errors: [`A friend request is already sent by ${existingFriendRequest.sender.username}`] });
+      .json({
+        errors: [
+          {
+            message: `A friend request is already sent by ${existingFriendRequest.sender.username}`,
+          },
+        ],
+      });
 
     return;
   }
@@ -31,10 +40,15 @@ export async function createFriendRequest(
     throw new Error("Receiver not found");
   }
 
-  res.status(201).json({ message: `Friend request sent to ${receiverRecord.username}` });
+  res
+    .status(201)
+    .json({ message: `Friend request sent to ${receiverRecord.username}` });
 }
 
-export async function deleteFriendRequest(req: Request<{ id: string }>, res: Response) {
+export async function deleteFriendRequest(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
   const { id } = req.params;
 
   try {
@@ -57,7 +71,10 @@ export async function deleteFriendRequest(req: Request<{ id: string }>, res: Res
   res.sendStatus(204);
 }
 
-export async function updateFriendRequest(req: Request<{ id: string }>, res: Response) {
+export async function updateFriendRequest(
+  req: Request<{ id: string }>,
+  res: Response,
+) {
   const { id } = req.params;
 
   try {

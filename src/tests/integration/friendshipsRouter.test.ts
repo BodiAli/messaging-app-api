@@ -23,7 +23,10 @@ describe("friendshipsRouter routes", () => {
         const token = issueJwt("12345", "10m");
 
         const response1 = await request(app).get("/friendships").expect(401);
-        const response2 = await request(app).get("/friendships").auth(token, { type: "bearer" }).expect(401);
+        const response2 = await request(app)
+          .get("/friendships")
+          .auth(token, { type: "bearer" })
+          .expect(401);
 
         expect(response1.unauthorized).toBe(true);
         expect(response2.unauthorized).toBe(true);
@@ -34,7 +37,10 @@ describe("friendshipsRouter routes", () => {
       it("should return 403 status and an error message", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+        const currentUser = await userModel.getOrCreateUserRecord(
+          "guest",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -46,11 +52,13 @@ describe("friendshipsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          {
-            message: "You must have an account to complete this request.",
-          },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            {
+              message: "You must have an account to complete this request.",
+            },
+          ],
+        );
       });
     });
 
@@ -62,7 +70,9 @@ describe("friendshipsRouter routes", () => {
 
         const token = issueJwt(createdUser.id, "10m");
 
-        const response = await request(app).get("/friendships").auth(token, { type: "bearer" });
+        const response = await request(app)
+          .get("/friendships")
+          .auth(token, { type: "bearer" });
 
         expect(response.unauthorized).toBe(false);
       });
@@ -106,8 +116,12 @@ describe("friendshipsRouter routes", () => {
 
         const typedBodiBody = bodiResponse.body as ResponseError;
 
-        expect(typedBodiBody).toStrictEqual({
-          errors: ["A friend request is already sent by john"],
+        expect(typedBodiBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: `A friend request is already sent by ${johnUser.username}`,
+            },
+          ],
         });
       });
 
@@ -155,7 +169,9 @@ describe("friendshipsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual([{ message: "No record was found for a delete." }]);
+        expect(typedResponseBody.errors).toStrictEqual([
+          { message: "No record was found for a delete." },
+        ]);
       });
 
       it("should return 204 status when friend request id param is valid", async () => {
@@ -166,7 +182,10 @@ describe("friendshipsRouter routes", () => {
 
         const userAToken = issueJwt(userA.id, "10m");
 
-        const friendRequest = await friendshipModel.sendFriendRequest(userB.id, userA.id);
+        const friendRequest = await friendshipModel.sendFriendRequest(
+          userB.id,
+          userA.id,
+        );
 
         const response = await request(app)
           .delete(`/friendships/${friendRequest.id}`)
@@ -197,7 +216,9 @@ describe("friendshipsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual([{ message: "No record was found for an update." }]);
+        expect(typedResponseBody.errors).toStrictEqual([
+          { message: "No record was found for an update." },
+        ]);
       });
 
       it("should return 204 status when friend request id param is valid", async () => {
@@ -208,7 +229,10 @@ describe("friendshipsRouter routes", () => {
 
         const userAToken = issueJwt(userA.id, "10m");
 
-        const friendRequest = await friendshipModel.sendFriendRequest(userB.id, userA.id);
+        const friendRequest = await friendshipModel.sendFriendRequest(
+          userB.id,
+          userA.id,
+        );
 
         const response = await request(app)
           .patch(`/friendships/${friendRequest.id}`)
