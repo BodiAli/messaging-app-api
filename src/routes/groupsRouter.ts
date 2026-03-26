@@ -9,7 +9,11 @@ const groupsRouter = Router({ mergeParams: true });
 groupsRouter
   .route("/")
   .get(groupsController.getUserGroups)
-  .post(unauthorizeGuest, validateBody(GroupSchema), groupsController.createGroup);
+  .post(
+    unauthorizeGuest,
+    validateBody(GroupSchema),
+    groupsController.createGroup,
+  );
 
 groupsRouter
   .route("/:groupId")
@@ -21,10 +25,23 @@ groupsRouter
 groupsRouter
   .route("/:groupId/notifications")
   .all(unauthorizeGuest)
-  .post(validateBody(SendGroupInviteToUsers), groupsController.createGroupInvite)
+  .post(
+    validateBody(SendGroupInviteToUsers),
+    groupsController.createGroupInvite,
+  )
   .delete(groupsController.deleteGroupInvite)
   .patch(groupsController.acceptGroupInvite);
 
-groupsRouter.delete("/:groupId/members/:memberId", unauthorizeGuest, groupsController.deleteGroupMember);
+groupsRouter
+  .route("/:groupId/messages")
+  .all(unauthorizeGuest)
+  .post(groupsController.createGroupMessage)
+  .get(groupsController.getGroupMessages);
+
+groupsRouter.delete(
+  "/:groupId/members/:memberId",
+  unauthorizeGuest,
+  groupsController.deleteGroupMember,
+);
 
 export default groupsRouter;
