@@ -1,8 +1,15 @@
 import { Router } from "express";
 import validateBody from "../middlewares/validateBody.js";
-import { GroupSchema, SendGroupInviteToUsers } from "../lib/zodSchemas.js";
+import {
+  GroupSchema,
+  MessageContentSchema,
+  OptionalFileSchema,
+  SendGroupInviteToUsers,
+} from "../lib/zodSchemas.js";
 import unauthorizeGuest from "../middlewares/unauthorizeGuest.js";
 import * as groupsController from "../controllers/groupsController.js";
+import upload from "../config/multerConfig.js";
+import validateFile from "../middlewares/validateFile.js";
 
 const groupsRouter = Router({ mergeParams: true });
 
@@ -35,7 +42,12 @@ groupsRouter
 groupsRouter
   .route("/:groupId/messages")
   .all(unauthorizeGuest)
-  .post(groupsController.createGroupMessage)
+  .post(
+    upload.single("messageImage"),
+    validateFile(OptionalFileSchema),
+    validateBody(MessageContentSchema),
+    groupsController.createGroupMessage,
+  )
   .get(groupsController.getGroupMessages);
 
 groupsRouter.delete(
