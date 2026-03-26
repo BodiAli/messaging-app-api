@@ -98,7 +98,8 @@ export async function createMessage(
                 }
 
                 if (!uploadResult) {
-                  throw new Error("Upload result not found");
+                  reject(new Error("Upload result not found"));
+                  return;
                 }
 
                 resolve(uploadResult);
