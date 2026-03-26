@@ -1,12 +1,19 @@
 import express from "express";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import request from "supertest";
 import usersRouter from "../../routes/usersRouter.js";
 import * as userModel from "../../models/userModel.js";
 import * as groupModel from "../../models/groupModel.js";
 import issueJwt from "../../lib/issueJwt.js";
-import type { GroupChat, User } from "../../generated/prisma/index.js";
+import cloudinary from "../../config/cloudinaryConfig.js";
+import type { GroupChat, Message, User } from "../../generated/prisma/index.js";
 import type ResponseError from "../../types/responseError.js";
+import type {
+  UploadStream,
+  UploadApiResponse,
+  UploadResponseCallback,
+  UploadApiOptions,
+} from "cloudinary";
 import "../../config/passportConfig.js";
 
 const app = express();
@@ -946,8 +953,200 @@ describe("groupsRouter routes", () => {
       });
     });
 
-    describe("given invalid message content", () => {
-      it.todo("should return 400 status when messageImage is more than 5MB");
+    describe("given invalid inputs", () => {
+      it("should return 400 status when messageImage is more than 5MB", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const buffer = Buffer.alloc(1024 * 1024 * 5 + 1);
+
+        const response = await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(currentUserToken, { type: "bearer" })
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "image/png",
+          })
+          .expect("Content-type", /json/)
+          .expect(400);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toMatchObject<ResponseError>({
+          errors: [
+            {
+              message: "File cannot exceed 5MBs.",
+            },
+          ],
+        });
+      });
+
+      it("should return 400 status when messageImage is not of type image", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const buffer = Buffer.alloc(1024 * 1024 * 5);
+
+        const response = await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/messages`)
+          .attach("messageImage", buffer, {
+            filename: "fileName",
+            contentType: "test/html",
+          })
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(400);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toMatchObject({
+          errors: [
+            {
+              message: "File must be of type image.",
+            },
+          ],
+        });
+      });
+
+      it("should return 400 status when messageContent is empty", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ messageContent: " " })
+          .expect("Content-type", /json/)
+          .expect(400);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toMatchObject<ResponseError>({
+          errors: [
+            {
+              message: "Message cannot be empty.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given valid inputs", () => {
+      interface MessageResponse {
+        message: Omit<Message, "createdAt"> & { createdAt: string };
+      }
+
+      it("should return 201 and create message when messageImage is not defined", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ messageContent: "message-content" })
+          .expect("Content-type", /json/)
+          .expect(201);
+        const typedResponseBody = response.body as MessageResponse;
+
+        expect(typedResponseBody).toStrictEqual<MessageResponse>({
+          message: {
+            content: "message-content",
+            createdAt: expect.any(String) as string,
+            groupChatId: userAGroup.id,
+            id: expect.any(String) as string,
+            imageUrl: null,
+            receiverId: null,
+            senderId: currentUser.id,
+          },
+        });
+      });
+
+      it("should return 201 and create message when messageContent and messageImage are valid", async () => {
+        expect.hasAssertions();
+
+        vi.spyOn(cloudinary.uploader, "upload_stream").mockImplementation(
+          (_options?: UploadApiOptions, cb?: UploadResponseCallback) => {
+            return {
+              end: () => {
+                if (cb) {
+                  cb(undefined, {
+                    secure_url: "imageUrl",
+                  } as UploadApiResponse);
+                }
+              },
+            } as UploadStream;
+          },
+        );
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const buffer = Buffer.alloc(1024 * 1024 * 5);
+
+        const response = await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(currentUserToken, { type: "bearer" })
+          .attach("messageImage", buffer, {
+            contentType: "image/png",
+            filename: "fileName",
+          })
+          .field("messageContent", "message-content")
+          .expect("Content-type", /json/)
+          .expect(201);
+        const typedResponseBody = response.body as MessageResponse;
+
+        expect(typedResponseBody).toStrictEqual<MessageResponse>({
+          message: {
+            content: "message-content",
+            createdAt: expect.any(String) as string,
+            groupChatId: userAGroup.id,
+            id: expect.any(String) as string,
+            imageUrl: "imageUrl",
+            receiverId: null,
+            senderId: currentUser.id,
+          },
+        });
+      });
+    });
+
+    describe("given rejected promise during upload", () => {
+      it("should return 500 status", async () => {
+        expect.hasAssertions();
+
+        vi.spyOn(cloudinary.uploader, "upload_stream").mockImplementation(
+          (_options?: UploadApiOptions, cb?: UploadResponseCallback) => {
+            return {
+              end: () => {
+                if (cb) {
+                  cb({
+                    http_code: 499,
+                    message: "FAILED",
+                    name: "TimeoutError",
+                  });
+                }
+              },
+            } as UploadStream;
+          },
+        );
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        const buffer = Buffer.alloc(1024 * 1024 * 5);
+
+        const response = await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(currentUserToken, { type: "bearer" })
+          .attach("messageImage", buffer, {
+            contentType: "image/png",
+            filename: "fileName",
+          })
+          .field("messageContent", "message-content")
+          .expect(500);
+
+        expect(response.serverError).toBe(true);
+      });
+    });
+  });
+
+  describe("get group messages GET /users/me/groups/:groupId/messages", () => {
+    describe("given non-existing group id", () => {
+      it.todo("should return 404 with error message");
     });
   });
 });
