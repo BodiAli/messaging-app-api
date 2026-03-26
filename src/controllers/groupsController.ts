@@ -1,6 +1,7 @@
 import * as groupModel from "../models/groupModel.js";
 import CustomHttpStatusError from "../errors/httpStatusError.js";
 import { Prisma } from "../generated/prisma/index.js";
+import * as messageModel from "../models/messageModel.js";
 import type { NextFunction, Request, Response } from "express";
 
 export async function getUserGroups(req: Request, res: Response) {
@@ -13,7 +14,10 @@ export async function getUserGroups(req: Request, res: Response) {
   res.json({ groups: userGroups });
 }
 
-export async function createGroup(req: Request<object, object, { groupName: string }>, res: Response) {
+export async function createGroup(
+  req: Request<object, object, { groupName: string }>,
+  res: Response,
+) {
   if (!req.user) {
     throw new Error("User not found");
   }
@@ -25,7 +29,10 @@ export async function createGroup(req: Request<object, object, { groupName: stri
   res.status(201).json({ group: createdGroup });
 }
 
-export async function getGroupWithMembers(req: Request<{ groupId: string }>, res: Response) {
+export async function getGroupWithMembers(
+  req: Request<{ groupId: string }>,
+  res: Response,
+) {
   const { groupId } = req.params;
 
   const groupWithMembers = await groupModel.getGroupWithMembers(groupId);
@@ -33,7 +40,10 @@ export async function getGroupWithMembers(req: Request<{ groupId: string }>, res
   if (!groupWithMembers) {
     res.status(404).json({
       errors: [
-        { message: "Group not found! it may have been moved, deleted or it might have never existed." },
+        {
+          message:
+            "Group not found! it may have been moved, deleted or it might have never existed.",
+        },
       ],
     });
 
@@ -46,7 +56,7 @@ export async function getGroupWithMembers(req: Request<{ groupId: string }>, res
 export async function createGroupInvite(
   req: Request<{ groupId: string }, object, { userIds: string[] }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   if (!req.user) {
     throw new Error("User not found");
@@ -80,7 +90,7 @@ export async function createGroupInvite(
 export async function deleteGroupInvite(
   req: Request<{ groupId: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   if (!req.user) {
     throw new Error("User not found");
@@ -106,7 +116,7 @@ export async function deleteGroupInvite(
 export async function acceptGroupInvite(
   req: Request<{ groupId: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   if (!req.user) {
     throw new Error("User not found");
@@ -132,7 +142,7 @@ export async function acceptGroupInvite(
 export async function updateGroupName(
   req: Request<{ groupId: string }, object, { groupName: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   if (!req.user) {
     throw new Error("User not found");
@@ -142,7 +152,11 @@ export async function updateGroupName(
   const { groupName } = req.body;
 
   try {
-    const updatedGroup = await groupModel.updateGroupName(groupId, req.user.id, groupName);
+    const updatedGroup = await groupModel.updateGroupName(
+      groupId,
+      req.user.id,
+      groupName,
+    );
 
     res.status(200).json({ group: updatedGroup });
   } catch (error) {
@@ -158,7 +172,7 @@ export async function updateGroupName(
 export async function deleteGroupMember(
   req: Request<{ groupId: string; memberId: string }>,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   if (!req.user) {
     throw new Error("User not found");
@@ -179,7 +193,11 @@ export async function deleteGroupMember(
   }
 }
 
-export async function deleteGroup(req: Request<{ groupId: string }>, res: Response, next: NextFunction) {
+export async function deleteGroup(
+  req: Request<{ groupId: string }>,
+  res: Response,
+  next: NextFunction,
+) {
   if (!req.user) {
     throw new Error("User not found");
   }
@@ -190,6 +208,47 @@ export async function deleteGroup(req: Request<{ groupId: string }>, res: Respon
     await groupModel.deleteGroup(groupId, req.user.id);
 
     res.sendStatus(204);
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+    next(error);
+  }
+}
+
+export async function getGroupMessages(
+  req: Request<{ groupId: string }>,
+  res: Response,
+) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+
+  const { groupId } = req.params;
+
+  try {
+    const groupMessages = await messageModel.getGroupMessages();
+  } catch (error) {}
+}
+
+export async function createGroupMessage(
+  req: Request<{ groupId: string }, object, { messageContent: string }>,
+  res: Response,
+  next: NextFunction,
+) {
+  if (!req.user) {
+    throw new Error("User not found");
+  }
+  const { groupId } = req.params;
+  const { messageContent } = req.body;
+
+  try {
+    const message = await messageModel.sendMessageToGroup(
+      req.user.id,
+      groupId,
+      { content: messageContent, imageUrl: null },
+    );
   } catch (error) {
     if (error instanceof CustomHttpStatusError) {
       res.status(error.code).json({ errors: [{ message: error.message }] });
