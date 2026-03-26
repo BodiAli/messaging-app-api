@@ -2,7 +2,9 @@ import * as groupModel from "../models/groupModel.js";
 import CustomHttpStatusError from "../errors/httpStatusError.js";
 import { Prisma } from "../generated/prisma/index.js";
 import * as messageModel from "../models/messageModel.js";
+import cloudinary from "../config/cloudinaryConfig.js";
 import type { NextFunction, Request, Response } from "express";
+import type { UploadApiResponse } from "cloudinary";
 
 export async function getUserGroups(req: Request, res: Response) {
   if (!req.user) {
@@ -240,15 +242,48 @@ export async function createGroupMessage(
   if (!req.user) {
     throw new Error("User not found");
   }
+
   const { groupId } = req.params;
   const { messageContent } = req.body;
 
+  let imageUrl: string | null = null;
+
+  const file = req.file;
+
   try {
-    const message = await messageModel.sendMessageToGroup(
+    if (file) {
+      const { secure_url } = await new Promise<UploadApiResponse>(
+        (resolve, reject) => {
+          cloudinary.uploader
+            .upload_stream(
+              { resource_type: "image" },
+              (error, uploadResult) => {
+                if (error) {
+                  reject(error as Error);
+                  return;
+                }
+
+                if (!uploadResult) {
+                  reject(new Error("Upload result not found"));
+                  return;
+                }
+
+                resolve(uploadResult);
+              },
+            )
+            .end(file.buffer);
+        },
+      );
+      imageUrl = secure_url;
+    }
+
+    const createdMessage = await messageModel.sendMessageToGroup(
       req.user.id,
       groupId,
-      { content: messageContent, imageUrl: null },
+      { content: messageContent, imageUrl },
     );
+
+    res.status(201).json({ message: createdMessage });
   } catch (error) {
     if (error instanceof CustomHttpStatusError) {
       res.status(error.code).json({ errors: [{ message: error.message }] });
