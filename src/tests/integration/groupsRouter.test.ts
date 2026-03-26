@@ -25,15 +25,26 @@ describe("groupsRouter routes", () => {
   let currentUserGroup: GroupChat;
 
   beforeEach(async () => {
+    /**
+     * currentUser owns a group and is a member of userA's group.
+     * userA owns a group and is not a member of any group.
+     * userB owns a group and is not a member of any group.
+     */
+
     currentUser = await userModel.createUserRecord("currentUser", "12345");
     userA = await userModel.createUserRecord("userA", "12345");
     userB = await userModel.createUserRecord("userB", "12345");
 
-    currentUserGroup = await groupModel.createGroup("currentUser's group", currentUser.id);
+    currentUserGroup = await groupModel.createGroup(
+      "currentUser's group",
+      currentUser.id,
+    );
     userAGroup = await groupModel.createGroup("userA's group", userA.id);
     userBGroup = await groupModel.createGroup("userB's group", userB.id);
 
-    await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [currentUser.id]);
+    await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [
+      currentUser.id,
+    ]);
 
     await groupModel.acceptGroupInvite(userAGroup.id, currentUser.id);
   });
@@ -76,7 +87,10 @@ describe("groupsRouter routes", () => {
       it("should return 403 status with error message", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+        const currentUser = await userModel.getOrCreateUserRecord(
+          "guest",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -88,11 +102,13 @@ describe("groupsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          {
-            message: "You must have an account to complete this request.",
-          },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            {
+              message: "You must have an account to complete this request.",
+            },
+          ],
+        );
       });
     });
 
@@ -149,7 +165,10 @@ describe("groupsRouter routes", () => {
       it("should return 403 status with error message", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+        const currentUser = await userModel.getOrCreateUserRecord(
+          "guest",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -161,11 +180,13 @@ describe("groupsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          {
-            message: "You must have an account to complete this request.",
-          },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            {
+              message: "You must have an account to complete this request.",
+            },
+          ],
+        );
       });
     });
   });
@@ -187,7 +208,10 @@ describe("groupsRouter routes", () => {
 
         expect(typedResponseBody).toStrictEqual<ResponseError>({
           errors: [
-            { message: "Group not found! it may have been moved, deleted or it might have never existed." },
+            {
+              message:
+                "Group not found! it may have been moved, deleted or it might have never existed.",
+            },
           ],
         });
       });
@@ -206,13 +230,17 @@ describe("groupsRouter routes", () => {
           .expect(200);
 
         const typedResponseBody = response.body as {
-          group: Omit<GroupChat, "adminId"> & { users: Pick<User, "id" | "imageUrl" | "username">[] } & {
+          group: Omit<GroupChat, "adminId"> & {
+            users: Pick<User, "id" | "imageUrl" | "username">[];
+          } & {
             admin: Pick<User, "id" | "imageUrl" | "username">;
           };
         };
 
         expect(typedResponseBody.group).toStrictEqual<
-          Omit<GroupChat, "adminId"> & { users: Pick<User, "id" | "imageUrl" | "username">[] } & {
+          Omit<GroupChat, "adminId"> & {
+            users: Pick<User, "id" | "imageUrl" | "username">[];
+          } & {
             admin: Pick<User, "id" | "imageUrl" | "username">;
           }
         >({
@@ -241,7 +269,10 @@ describe("groupsRouter routes", () => {
       it("should return 403 status with error message", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+        const currentUser = await userModel.getOrCreateUserRecord(
+          "guest",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -253,11 +284,13 @@ describe("groupsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          {
-            message: "You must have an account to complete this request.",
-          },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            {
+              message: "You must have an account to complete this request.",
+            },
+          ],
+        );
       });
     });
   });
@@ -279,7 +312,9 @@ describe("groupsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody).toStrictEqual<ResponseError>({ errors: [{ message: "Group not found." }] });
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [{ message: "Group not found." }],
+        });
       });
     });
 
@@ -621,7 +656,10 @@ describe("groupsRouter routes", () => {
       it("should return 403 status with error message", async () => {
         expect.hasAssertions();
 
-        const currentUser = await userModel.getOrCreateUserRecord("guest", "12345");
+        const currentUser = await userModel.getOrCreateUserRecord(
+          "guest",
+          "12345",
+        );
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
 
@@ -633,11 +671,13 @@ describe("groupsRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>([
-          {
-            message: "You must have an account to complete this request.",
-          },
-        ]);
+        expect(typedResponseBody.errors).toStrictEqual<ResponseError["errors"]>(
+          [
+            {
+              message: "You must have an account to complete this request.",
+            },
+          ],
+        );
       });
     });
 
@@ -806,7 +846,9 @@ describe("groupsRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const currentUserBeforeDelete = currentUserResponse1.body as { groups: GroupChat[] };
+        const currentUserBeforeDelete = currentUserResponse1.body as {
+          groups: GroupChat[];
+        };
 
         expect(currentUserBeforeDelete.groups).toStrictEqual<GroupChat[]>([
           {
@@ -836,7 +878,9 @@ describe("groupsRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const currentUserGroupsAfterDelete = currentUserResponse2.body as { groups: GroupChat[] };
+        const currentUserGroupsAfterDelete = currentUserResponse2.body as {
+          groups: GroupChat[];
+        };
 
         expect(currentUserGroupsAfterDelete.groups).toStrictEqual<GroupChat[]>([
           {
@@ -847,6 +891,63 @@ describe("groupsRouter routes", () => {
           },
         ]);
       });
+    });
+  });
+
+  describe("send message to group POST /users/me/groups/:groupId/messages", () => {
+    describe("given non-existing group id", () => {
+      it("should return 404 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .post("/users/me/groups/notExists/messages")
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ messageContent: "messageContent" })
+          .expect("Content-type", /json/)
+          .expect(404);
+
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "Group not found.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given current user is not a member or an admin of the group", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+
+        const response = await request(app)
+          .post(`/users/me/groups/${userBGroup.id}/messages`)
+          .auth(userAToken, { type: "bearer" })
+          .type("json")
+          .send({ messageContent: "messageContent" })
+          .expect("Content-type", /json/)
+          .expect(403);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "You cannot send message to this group.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given invalid message content", () => {
+      it.todo("should return 400 status when messageImage is more than 5MB");
     });
   });
 });
