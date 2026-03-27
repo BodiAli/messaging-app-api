@@ -222,6 +222,7 @@ export async function deleteGroup(
 export async function getGroupMessages(
   req: Request<{ groupId: string }>,
   res: Response,
+  next: NextFunction,
 ) {
   if (!req.user) {
     throw new Error("User not found");
@@ -230,8 +231,20 @@ export async function getGroupMessages(
   const { groupId } = req.params;
 
   try {
-    const groupMessages = await messageModel.getGroupMessages();
-  } catch (error) {}
+    const groupMessages = await messageModel.getGroupMessages(
+      groupId,
+      req.user.id,
+    );
+
+    res.status(200).json({ messages: groupMessages });
+  } catch (error) {
+    if (error instanceof CustomHttpStatusError) {
+      res.status(error.code).json({ errors: [{ message: error.message }] });
+      return;
+    }
+
+    next(error);
+  }
 }
 
 export async function createGroupMessage(
