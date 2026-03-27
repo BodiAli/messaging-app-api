@@ -228,6 +228,11 @@ describe("messageModel queries", () => {
           imageUrl: null,
           receiverId: null,
           senderId: userA.id,
+          sender: {
+            id: userA.id,
+            imageUrl: null,
+            username: userA.username,
+          },
         },
         {
           content: "userB's message",
@@ -237,6 +242,11 @@ describe("messageModel queries", () => {
           imageUrl: "imageUrl",
           receiverId: null,
           senderId: userB.id,
+          sender: {
+            id: userB.id,
+            imageUrl: null,
+            username: userB.username,
+          },
         },
       ]);
     });
