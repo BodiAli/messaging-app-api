@@ -108,6 +108,15 @@ export async function getGroupMessages(groupId: string, currentUserId: string) {
     where: {
       groupChatId: groupId,
     },
+    include: {
+      sender: {
+        omit: {
+          isGuest: true,
+          password: true,
+          lastSeen: true,
+        },
+      },
+    },
   });
 
   return messages;
