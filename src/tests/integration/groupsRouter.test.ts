@@ -1146,7 +1146,95 @@ describe("groupsRouter routes", () => {
 
   describe("get group messages GET /users/me/groups/:groupId/messages", () => {
     describe("given non-existing group id", () => {
-      it.todo("should return 404 with error message");
+      it("should return 404 with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+
+        const response = await request(app)
+          .get("/users/me/groups/notExists/messages")
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(404);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "Group not found.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given non-member or non-admin requesting group messages", () => {
+      it("should return 403 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userBToken = issueJwt(userB.id, "10m");
+
+        const response = await request(app)
+          .get(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(userBToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(403);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "You cannot view messages of this group.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given member of group", () => {
+      it("should return 200 status with group messages", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ messageContent: "hello world!" })
+          .expect(201);
+        interface MessagesResponse {
+          messages: (Omit<Message, "createdAt"> & {
+            createdAt: string;
+            sender: Omit<User, "password" | "isGuest" | "lastSeen">;
+          })[];
+        }
+
+        const response = await request(app)
+          .get(`/users/me/groups/${userAGroup.id}/messages`)
+          .auth(currentUserToken, { type: "bearer" })
+          .expect("Content-type", /json/)
+          .expect(200);
+        const typedResponseBody = response.body as MessagesResponse;
+
+        expect(typedResponseBody).toStrictEqual<MessagesResponse>({
+          messages: [
+            {
+              content: "hello world!",
+              createdAt: expect.any(String) as string,
+              groupChatId: userAGroup.id,
+              id: expect.any(String) as string,
+              imageUrl: null,
+              receiverId: null,
+              senderId: currentUser.id,
+              sender: {
+                id: currentUser.id,
+                imageUrl: null,
+                username: currentUser.username,
+              },
+            },
+          ],
+        });
+      });
     });
   });
 });
