@@ -1192,7 +1192,7 @@ describe("groupsRouter routes", () => {
     });
 
     describe("given member of group", () => {
-      it("should return 200 status with group messages", async () => {
+      it("should return 200 status with group messages and group details", async () => {
         expect.hasAssertions();
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
@@ -1207,6 +1207,9 @@ describe("groupsRouter routes", () => {
             createdAt: string;
             sender: Omit<User, "password" | "isGuest" | "lastSeen">;
           })[];
+          group: Omit<GroupChat, "adminId" | "createdAt"> & {
+            createdAt: string;
+          };
         }
 
         const response = await request(app)
@@ -1233,6 +1236,11 @@ describe("groupsRouter routes", () => {
               },
             },
           ],
+          group: {
+            createdAt: expect.any(String) as string,
+            id: userAGroup.id,
+            name: userAGroup.name,
+          },
         });
       });
     });

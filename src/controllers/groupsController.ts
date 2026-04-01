@@ -1,3 +1,4 @@
+import assert from "node:assert";
 import * as groupModel from "../models/groupModel.js";
 import CustomHttpStatusError from "../errors/httpStatusError.js";
 import { Prisma } from "../generated/prisma/index.js";
@@ -236,7 +237,11 @@ export async function getGroupMessages(
       req.user.id,
     );
 
-    res.status(200).json({ messages: groupMessages });
+    const groupWithMembers = await groupModel.getGroupWithMembers(groupId);
+    assert(groupWithMembers);
+    const { users: _users, admin: _admin, ...group } = groupWithMembers;
+
+    res.status(200).json({ messages: groupMessages, group });
   } catch (error) {
     if (error instanceof CustomHttpStatusError) {
       res.status(error.code).json({ errors: [{ message: error.message }] });
