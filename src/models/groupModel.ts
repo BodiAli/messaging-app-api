@@ -43,10 +43,17 @@ export async function getGroupWithMembers(groupId: string) {
   return groupWithMembers;
 }
 
-export async function sendGroupInviteToUsers(groupId: string, currentUserId: string, usersIds: string[]) {
+export async function sendGroupInviteToUsers(
+  groupId: string,
+  currentUserId: string,
+  usersIds: string[],
+) {
   const group = await prisma.groupChat.findUnique({
     where: {
       id: groupId,
+    },
+    include: {
+      users: true,
     },
   });
 
@@ -57,11 +64,28 @@ export async function sendGroupInviteToUsers(groupId: string, currentUserId: str
   const isAdmin = group.adminId === currentUserId;
 
   if (!isAdmin) {
-    throw new CustomHttpStatusError("You do not have permission to invite users to this group.", 403);
+    throw new CustomHttpStatusError(
+      "You do not have permission to invite users to this group.",
+      403,
+    );
   }
 
   if (usersIds.includes(group.adminId)) {
-    throw new CustomHttpStatusError("You cannot invite yourself to this group.", 422);
+    throw new CustomHttpStatusError(
+      "You cannot invite yourself to this group.",
+      422,
+    );
+  }
+
+  if (
+    group.users.some((member, index) => {
+      return member.id === usersIds[index];
+    })
+  ) {
+    throw new CustomHttpStatusError(
+      "User is already a member of the group.",
+      409,
+    );
   }
 
   await prisma.groupChat.update({
@@ -70,13 +94,19 @@ export async function sendGroupInviteToUsers(groupId: string, currentUserId: str
     },
     data: {
       notifications: {
-        create: usersIds.map((id) => ({ type: "GROUP_INVITATION", userId: id })),
+        create: usersIds.map((id) => ({
+          type: "GROUP_INVITATION",
+          userId: id,
+        })),
       },
     },
   });
 }
 
-export async function rejectGroupInvite(groupId: string, currentUserId: string) {
+export async function rejectGroupInvite(
+  groupId: string,
+  currentUserId: string,
+) {
   const doesInviteExist = await prisma.notification.findUnique({
     where: {
       userId_groupChatInvitationId: {
@@ -107,7 +137,10 @@ export async function rejectGroupInvite(groupId: string, currentUserId: string) 
   });
 }
 
-export async function acceptGroupInvite(groupId: string, currentUserId: string) {
+export async function acceptGroupInvite(
+  groupId: string,
+  currentUserId: string,
+) {
   const doesInviteExist = await prisma.notification.findUnique({
     where: {
       userId_groupChatInvitationId: {
@@ -143,7 +176,11 @@ export async function acceptGroupInvite(groupId: string, currentUserId: string) 
   });
 }
 
-export async function updateGroupName(groupId: string, currentUserId: string, newName: string) {
+export async function updateGroupName(
+  groupId: string,
+  currentUserId: string,
+  newName: string,
+) {
   const group = await prisma.groupChat.findUnique({
     where: {
       id: groupId,
@@ -155,7 +192,10 @@ export async function updateGroupName(groupId: string, currentUserId: string, ne
   }
 
   if (group.adminId !== currentUserId) {
-    throw new CustomHttpStatusError("You do not have permission to update this group name.", 403);
+    throw new CustomHttpStatusError(
+      "You do not have permission to update this group name.",
+      403,
+    );
   }
 
   const updatedGroup = await prisma.groupChat.update({
@@ -171,7 +211,11 @@ export async function updateGroupName(groupId: string, currentUserId: string, ne
   return updatedGroup;
 }
 
-export async function removeGroupMember(groupId: string, memberId: string, currentUserId: string) {
+export async function removeGroupMember(
+  groupId: string,
+  memberId: string,
+  currentUserId: string,
+) {
   const group = await prisma.groupChat.findUnique({
     where: {
       id: groupId,
@@ -186,7 +230,10 @@ export async function removeGroupMember(groupId: string, memberId: string, curre
   const isSelf = memberId === currentUserId;
 
   if (!isAdmin && !isSelf) {
-    throw new CustomHttpStatusError("You do not have permission to remove this member.", 403);
+    throw new CustomHttpStatusError(
+      "You do not have permission to remove this member.",
+      403,
+    );
   }
 
   const isMemberInGroup = await prisma.user.findUnique({
@@ -230,7 +277,10 @@ export async function deleteGroup(groupId: string, currentUserId: string) {
   }
 
   if (group.adminId !== currentUserId) {
-    throw new CustomHttpStatusError("You do not have permission to delete this group.", 403);
+    throw new CustomHttpStatusError(
+      "You do not have permission to delete this group.",
+      403,
+    );
   }
 
   await prisma.groupChat.delete({

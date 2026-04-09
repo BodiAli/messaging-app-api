@@ -398,7 +398,7 @@ describe("groupsRouter routes", () => {
         });
       });
 
-      it("should return 422 status with error message group admin invites themselves", async () => {
+      it("should return 422 status with error message when group admin invites themselves", async () => {
         expect.hasAssertions();
 
         const currentUserToken = issueJwt(currentUser.id, "10m");
@@ -418,6 +418,58 @@ describe("groupsRouter routes", () => {
             expect.objectContaining({
               message: "You cannot invite yourself to this group.",
             }) as { message: string },
+          ],
+        });
+      });
+    });
+
+    describe("given re-invite of the same non-member user", () => {
+      it("should return 422 status with error message", async () => {
+        expect.hasAssertions();
+
+        const currentUserToken = issueJwt(currentUser.id, "10m");
+        await request(app)
+          .post(`/users/me/groups/${currentUserGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: [userA.id] });
+
+        const response = await request(app)
+          .post(`/users/me/groups/${currentUserGroup.id}/notifications`)
+          .auth(currentUserToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: [userA.id] })
+          .expect(422);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "An invite is already sent to this user.",
+            },
+          ],
+        });
+      });
+    });
+
+    describe("given re-invite of the same member user", () => {
+      it("should return 422 status with error message", async () => {
+        expect.hasAssertions();
+
+        const userAToken = issueJwt(userA.id, "10m");
+        const response = await request(app)
+          .post(`/users/me/groups/${userAGroup.id}/notifications`)
+          .auth(userAToken, { type: "bearer" })
+          .type("json")
+          .send({ userIds: [currentUser.id] })
+          .expect(409);
+        const typedResponseBody = response.body as ResponseError;
+
+        expect(typedResponseBody).toStrictEqual<ResponseError>({
+          errors: [
+            {
+              message: "User is already a member of the group.",
+            },
           ],
         });
       });

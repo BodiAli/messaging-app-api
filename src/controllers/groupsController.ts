@@ -81,6 +81,11 @@ export async function createGroupInvite(
         res.status(422).json({ errors: [{ message: "Invalid user ID." }] });
         return;
       }
+      if (error.code === "P2002") {
+        res.status(422).json({
+          errors: [{ message: "An invite is already sent to this user." }],
+        });
+      }
     }
 
     next(error);
