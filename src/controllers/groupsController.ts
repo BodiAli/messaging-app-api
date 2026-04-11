@@ -85,6 +85,7 @@ export async function createGroupInvite(
         res.status(422).json({
           errors: [{ message: "An invite is already sent to this user." }],
         });
+        return;
       }
     }
 
