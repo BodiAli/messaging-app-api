@@ -40,6 +40,7 @@ export async function getTwoUsersMessages(
     ? {
         type: friendRequestRecord.status,
         senderId: friendRequestRecord.senderId,
+        id: friendRequestRecord.id,
       }
     : null;
 
