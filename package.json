@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx --watch ./src/app.ts",
     "start": "NODE_ENV=production node ./dist/src/app.js",
-    "build": "tsc",
+    "build": "npx prisma generate --sql && tsc",
     "test": "NODE_ENV=test vitest"
   },
   "keywords": [],
@@ -48,6 +48,7 @@
     "prisma": "^6.16.3",
     "supertest": "^7.1.4",
     "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.45.0",
     "vitest": "^3.2.4"
   }
