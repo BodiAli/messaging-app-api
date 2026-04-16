@@ -1,14 +1,18 @@
 import bcrypt from "bcrypt";
 import passport from "passport";
 import * as userModel from "../models/userModel.js";
-import { Prisma, type User } from "../generated/prisma/index.js";
+import { Prisma, type User } from "../generated/prisma/client.js";
 import issueJwt from "../lib/issueJwt.js";
 import type { NextFunction, Request, RequestHandler, Response } from "express";
 
 export async function createUser(
-  req: Request<object, object, { username: string; password: string; confirmPassword: string }>,
+  req: Request<
+    object,
+    object,
+    { username: string; password: string; confirmPassword: string }
+  >,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) {
   try {
     const { username, password } = req.body;
@@ -27,7 +31,9 @@ export async function createUser(
       const target = error.meta["target"] as string[];
 
       if (error.code === "P2002" && target[0] === "username") {
-        res.status(409).json({ errors: [{ message: "A user with this username already exists." }] });
+        res.status(409).json({
+          errors: [{ message: "A user with this username already exists." }],
+        });
         return;
       }
     }
@@ -35,7 +41,11 @@ export async function createUser(
   }
 }
 
-export function authenticateUser(req: Request, res: Response, next: NextFunction) {
+export function authenticateUser(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
   (
     passport.authenticate(
       "local",
@@ -56,14 +66,17 @@ export function authenticateUser(req: Request, res: Response, next: NextFunction
         const updatedUser = await userModel.updateUserRecordLastSeen(user.id);
 
         res.json({ token, user: updatedUser });
-      }
+      },
     ) as RequestHandler
   )(req, res, next);
 }
 
 export async function logInAsGuest(_req: Request, res: Response) {
   const hashedPassword = await bcrypt.hash("guestPassword", 10);
-  const guestUser = await userModel.getOrCreateUserRecord("guest-user", hashedPassword);
+  const guestUser = await userModel.getOrCreateUserRecord(
+    "guest-user",
+    hashedPassword,
+  );
 
   const token = issueJwt(guestUser.id, "30m");
 

@@ -1,11 +1,18 @@
-import type { NotificationType, GroupChat, User, Friendship } from "../generated/prisma/index.js";
+import type {
+  NotificationType,
+  GroupChat,
+  User,
+  Friendship,
+} from "../generated/prisma/client.js";
 
 interface GroupInviteNotification {
   id: string;
   createdAt: Date;
   type: NotificationType;
   friendRequest: null;
-  groupChatInvitation: Omit<GroupChat, "adminId"> & { admin: Pick<User, "username" | "imageUrl" | "id"> };
+  groupChatInvitation: Omit<GroupChat, "adminId"> & {
+    admin: Pick<User, "username" | "imageUrl" | "id">;
+  };
 }
 
 interface FriendRequestNotification {
@@ -13,7 +20,12 @@ interface FriendRequestNotification {
   createdAt: Date;
   type: NotificationType;
   groupChatInvitation: null;
-  friendRequest: Omit<Friendship, "senderId"> & { sender: Pick<User, "username" | "imageUrl" | "id"> };
+  friendRequest: Omit<Friendship, "senderId"> & {
+    sender: Pick<User, "username" | "imageUrl" | "id">;
+  };
 }
 
-export type UserNotifications = (FriendRequestNotification | GroupInviteNotification)[];
+export type UserNotifications = (
+  | FriendRequestNotification
+  | GroupInviteNotification
+)[];

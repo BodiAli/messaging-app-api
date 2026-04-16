@@ -3,10 +3,14 @@ import request from "supertest";
 import { describe, expect, it } from "vitest";
 import { jwt } from "zod";
 import authRouter from "../../routes/authRouter.js";
-import { createUserRecord, getUserRecordById, getUserRecordByUsername } from "../../models/userModel.js";
+import {
+  createUserRecord,
+  getUserRecordById,
+  getUserRecordByUsername,
+} from "../../models/userModel.js";
 import issueJwt from "../../lib/issueJwt.js";
 import type ResponseError from "../../types/responseError.js";
-import type { User } from "../../generated/prisma/index.js";
+import type { User } from "../../generated/prisma/client.js";
 import "../../config/passportConfig.js";
 
 const app = express();
@@ -58,7 +62,11 @@ describe("authRouter routes", () => {
         const response = await request(app)
           .post("/auth/sign-up")
           .type("json")
-          .send({ username: "bodi", password: "54321", confirmPassword: "54321" })
+          .send({
+            username: "bodi",
+            password: "54321",
+            confirmPassword: "54321",
+          })
           .expect("Content-type", /json/)
           .expect(409);
 
@@ -79,13 +87,19 @@ describe("authRouter routes", () => {
         const response = await request(app)
           .post("/auth/sign-up")
           .type("json")
-          .send({ username: "bodi", password: "12345", confirmPassword: "12345" })
+          .send({
+            username: "bodi",
+            password: "12345",
+            confirmPassword: "12345",
+          })
           .expect("Content-type", /json/)
           .expect(201);
 
         const typedResponseBody = response.body as ResponseSuccess;
 
-        const isTokenValidJwt = jwt().safeParse(typedResponseBody.token).success;
+        const isTokenValidJwt = jwt().safeParse(
+          typedResponseBody.token,
+        ).success;
         const createdUser = await getUserRecordById(typedResponseBody.user.id);
 
         if (!createdUser) {
@@ -115,8 +129,12 @@ describe("authRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors[0]?.message).toBe("Username cannot be empty.");
-        expect(typedResponseBody.errors[1]?.message).toBe("Password cannot be empty.");
+        expect(typedResponseBody.errors[0]?.message).toBe(
+          "Username cannot be empty.",
+        );
+        expect(typedResponseBody.errors[1]?.message).toBe(
+          "Password cannot be empty.",
+        );
       });
     });
 
@@ -135,7 +153,9 @@ describe("authRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseError;
 
-        expect(typedResponseBody.errors[0]?.message).toBe("Incorrect username or password.");
+        expect(typedResponseBody.errors[0]?.message).toBe(
+          "Incorrect username or password.",
+        );
       });
     });
 
@@ -154,7 +174,9 @@ describe("authRouter routes", () => {
 
         const typedResponseBody = response.body as ResponseSuccess;
 
-        const isTokenValidJwt = jwt().safeParse(typedResponseBody.token).success;
+        const isTokenValidJwt = jwt().safeParse(
+          typedResponseBody.token,
+        ).success;
 
         expect(isTokenValidJwt).toBe(true);
         expect(typedResponseBody.user.id).toBe(existingUser.id);
@@ -170,7 +192,10 @@ describe("authRouter routes", () => {
       it("should return 200 status and return guest user object with JWT", async () => {
         expect.hasAssertions();
 
-        const response = await request(app).get("/auth/guest").expect("Content-type", /json/).expect(200);
+        const response = await request(app)
+          .get("/auth/guest")
+          .expect("Content-type", /json/)
+          .expect(200);
 
         const typedResponseBody = response.body as ResponseSuccess;
 
@@ -180,7 +205,9 @@ describe("authRouter routes", () => {
           throw new Error("Guest user record not found");
         }
 
-        const isTokenValidJwt = jwt().safeParse(typedResponseBody.token).success;
+        const isTokenValidJwt = jwt().safeParse(
+          typedResponseBody.token,
+        ).success;
 
         expect(isTokenValidJwt).toBe(true);
         expect(typedResponseBody.user.id).toBe(guestUser.id);
@@ -220,7 +247,10 @@ describe("authRouter routes", () => {
           .auth(currentUserToken, { type: "bearer" })
           .expect(200);
 
-        const typedResponseBody = response.body as Pick<ResponseSuccess, "user">;
+        const typedResponseBody = response.body as Pick<
+          ResponseSuccess,
+          "user"
+        >;
 
         expect(typedResponseBody.user).toStrictEqual<ResponseSuccess["user"]>({
           id: currentUser.id,

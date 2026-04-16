@@ -1,7 +1,7 @@
 import assert from "node:assert";
 import * as groupModel from "../models/groupModel.js";
 import CustomHttpStatusError from "../errors/httpStatusError.js";
-import { Prisma } from "../generated/prisma/index.js";
+import { Prisma } from "../generated/prisma/client.js";
 import * as messageModel from "../models/messageModel.js";
 import cloudinary from "../config/cloudinaryConfig.js";
 import type { NextFunction, Request, Response } from "express";

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import * as userModel from "../../models/userModel.js";
-import type { User } from "../../generated/prisma/index.js";
+import type { User } from "../../generated/prisma/client.js";
 
 describe("friendshipModel Queries", () => {
   describe(friendshipModel.getFriendRequestRecord, () => {
@@ -13,8 +13,10 @@ describe("friendshipModel Queries", () => {
 
       await friendshipModel.sendFriendRequest(john.id, bodi.id);
 
-      const existingFriendRequest1 = await friendshipModel.getFriendRequestRecord(john.id, bodi.id);
-      const existingFriendRequest2 = await friendshipModel.getFriendRequestRecord(bodi.id, john.id);
+      const existingFriendRequest1 =
+        await friendshipModel.getFriendRequestRecord(john.id, bodi.id);
+      const existingFriendRequest2 =
+        await friendshipModel.getFriendRequestRecord(bodi.id, john.id);
 
       if (!existingFriendRequest1 || !existingFriendRequest2) {
         throw new Error("Friend request not found");
@@ -41,7 +43,10 @@ describe("friendshipModel Queries", () => {
       const bodi = await userModel.createUserRecord("bodi", "12345");
       const john = await userModel.createUserRecord("john", "12345");
 
-      const friendship = await friendshipModel.sendFriendRequest(john.id, bodi.id);
+      const friendship = await friendshipModel.sendFriendRequest(
+        john.id,
+        bodi.id,
+      );
 
       expect(friendship.status).toBe("PENDING");
       expect(friendship.senderId).toBe(john.id);
@@ -56,11 +61,16 @@ describe("friendshipModel Queries", () => {
       const bodi = await userModel.createUserRecord("bodi", "12345");
       const john = await userModel.createUserRecord("john", "12345");
 
-      const friendRequest = await friendshipModel.sendFriendRequest(john.id, bodi.id);
+      const friendRequest = await friendshipModel.sendFriendRequest(
+        john.id,
+        bodi.id,
+      );
 
       expect(friendRequest.status).toBe("PENDING");
 
-      const updatedFriendship = await friendshipModel.acceptFriendRequest(friendRequest.id);
+      const updatedFriendship = await friendshipModel.acceptFriendRequest(
+        friendRequest.id,
+      );
 
       expect(updatedFriendship.status).toBe("ACCEPTED");
     });
@@ -73,11 +83,15 @@ describe("friendshipModel Queries", () => {
       const bodi = await userModel.createUserRecord("bodi", "12345");
       const john = await userModel.createUserRecord("john", "12345");
 
-      const friendRequest = await friendshipModel.sendFriendRequest(john.id, bodi.id);
+      const friendRequest = await friendshipModel.sendFriendRequest(
+        john.id,
+        bodi.id,
+      );
 
       await friendshipModel.deleteFriendRequest(friendRequest.id);
 
-      const doesNotExistFriendRequest = await friendshipModel.getFriendRequestRecord(bodi.id, john.id);
+      const doesNotExistFriendRequest =
+        await friendshipModel.getFriendRequestRecord(bodi.id, john.id);
 
       expect(doesNotExistFriendRequest).toBeNull();
     });
@@ -93,8 +107,14 @@ describe("friendshipModel Queries", () => {
       john = await userModel.createUserRecord("john", "12345");
       clare = await userModel.createUserRecord("clare", "12345");
 
-      const friendRequestOfJohn = await friendshipModel.sendFriendRequest(john.id, bodi.id);
-      const friendRequestOfClare = await friendshipModel.sendFriendRequest(clare.id, bodi.id);
+      const friendRequestOfJohn = await friendshipModel.sendFriendRequest(
+        john.id,
+        bodi.id,
+      );
+      const friendRequestOfClare = await friendshipModel.sendFriendRequest(
+        clare.id,
+        bodi.id,
+      );
 
       await friendshipModel.acceptFriendRequest(friendRequestOfJohn.id);
       await friendshipModel.acceptFriendRequest(friendRequestOfClare.id);
@@ -114,7 +134,7 @@ describe("friendshipModel Queries", () => {
           expect.objectContaining({
             username: "clare",
           }),
-        ])
+        ]),
       );
     });
 
@@ -129,7 +149,7 @@ describe("friendshipModel Queries", () => {
           expect.objectContaining({
             username: "bodi",
           }),
-        ])
+        ]),
       );
     });
 
@@ -144,7 +164,7 @@ describe("friendshipModel Queries", () => {
           expect.objectContaining({
             username: "bodi",
           }),
-        ])
+        ]),
       );
     });
   });
@@ -163,7 +183,10 @@ describe("friendshipModel Queries", () => {
       clare = await userModel.createUserRecord("clare", "12345");
       ahmed = await userModel.createUserRecord("ahmed", "12345");
 
-      const friendRequestOfJohn = await friendshipModel.sendFriendRequest(john.id, bodi.id);
+      const friendRequestOfJohn = await friendshipModel.sendFriendRequest(
+        john.id,
+        bodi.id,
+      );
       await friendshipModel.sendFriendRequest(clare.id, bodi.id);
 
       await friendshipModel.acceptFriendRequest(friendRequestOfJohn.id);
@@ -210,7 +233,9 @@ describe("friendshipModel Queries", () => {
     it("should return clare's non-friends", async () => {
       expect.hasAssertions();
 
-      const nonFriendsOfClare = await friendshipModel.getAnonymousUsers(clare.id);
+      const nonFriendsOfClare = await friendshipModel.getAnonymousUsers(
+        clare.id,
+      );
 
       expect(nonFriendsOfClare).toStrictEqual<AnonymousUsers>([
         {
@@ -234,7 +259,9 @@ describe("friendshipModel Queries", () => {
     it("should return ahmed's non-friends", async () => {
       expect.hasAssertions();
 
-      const nonFriendsOfAhmed = await friendshipModel.getAnonymousUsers(ahmed.id);
+      const nonFriendsOfAhmed = await friendshipModel.getAnonymousUsers(
+        ahmed.id,
+      );
 
       expect(nonFriendsOfAhmed).toStrictEqual<AnonymousUsers>([
         {

@@ -3,7 +3,7 @@ import * as notificationModel from "../../models/notificationModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import * as userModel from "../../models/userModel.js";
 import * as groupModel from "../../models/groupModel.js";
-import type { User } from "../../generated/prisma/index.js";
+import type { User } from "../../generated/prisma/client.js";
 import type { UserNotifications } from "../../types/userNotifications.js";
 
 describe("notificationModel queries", () => {
@@ -24,7 +24,9 @@ describe("notificationModel queries", () => {
       await friendshipModel.sendFriendRequest(userB.id, userA.id);
       await friendshipModel.sendFriendRequest(userC.id, userA.id);
 
-      const userANotifications = await notificationModel.getUserNotifications(userA.id);
+      const userANotifications = await notificationModel.getUserNotifications(
+        userA.id,
+      );
 
       expect(userANotifications).toHaveLength(2);
       expect(userANotifications).toStrictEqual<UserNotifications>([
@@ -71,10 +73,16 @@ describe("notificationModel queries", () => {
       const userAGroup = await groupModel.createGroup("userAGroup", userA.id);
       const userBGroup = await groupModel.createGroup("userBGroup", userB.id);
 
-      await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [userC.id]);
-      await groupModel.sendGroupInviteToUsers(userBGroup.id, userB.id, [userC.id]);
+      await groupModel.sendGroupInviteToUsers(userAGroup.id, userA.id, [
+        userC.id,
+      ]);
+      await groupModel.sendGroupInviteToUsers(userBGroup.id, userB.id, [
+        userC.id,
+      ]);
 
-      const userCNotifications = await notificationModel.getUserNotifications(userC.id);
+      const userCNotifications = await notificationModel.getUserNotifications(
+        userC.id,
+      );
 
       expect(userCNotifications).toStrictEqual<UserNotifications>([
         {
@@ -117,10 +125,14 @@ describe("notificationModel queries", () => {
 
       const userCGroup = await groupModel.createGroup("userCGroup", userC.id);
 
-      await groupModel.sendGroupInviteToUsers(userCGroup.id, userC.id, [userA.id]);
+      await groupModel.sendGroupInviteToUsers(userCGroup.id, userC.id, [
+        userA.id,
+      ]);
       await friendshipModel.sendFriendRequest(userB.id, userA.id);
 
-      const userANotifications = await notificationModel.getUserNotifications(userA.id);
+      const userANotifications = await notificationModel.getUserNotifications(
+        userA.id,
+      );
 
       expect(userANotifications).toStrictEqual<UserNotifications>([
         {

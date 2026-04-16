@@ -23,13 +23,18 @@ describe("userModel queries", () => {
 
       const createdUser = await userModel.createUserRecord("bodi", "12345");
 
-      const userWithPasswordField = await userModel.getUserRecordByIdUnsafe(createdUser.id);
+      const userWithPasswordField = await userModel.getUserRecordByIdUnsafe(
+        createdUser.id,
+      );
 
       if (!userWithPasswordField) {
         throw new Error("User not found");
       }
 
-      const doesPasswordMatch = await bcrypt.compare("12345", userWithPasswordField.password);
+      const doesPasswordMatch = await bcrypt.compare(
+        "12345",
+        userWithPasswordField.password,
+      );
 
       expect(userWithPasswordField.password).not.toBe("12345");
       expect(doesPasswordMatch).toBe(true);
@@ -93,7 +98,8 @@ describe("userModel queries", () => {
     it("should create a new user record if user record does not exist", async () => {
       expect.hasAssertions();
 
-      const doesNotExist = await userModel.getUserRecordByUsername("someUsername");
+      const doesNotExist =
+        await userModel.getUserRecordByUsername("someUsername");
 
       expect(doesNotExist).toBeNull();
 
@@ -107,9 +113,15 @@ describe("userModel queries", () => {
     it("should get the user record if it already exists", async () => {
       expect.hasAssertions();
 
-      const existingUser = await userModel.createUserRecord("someUsername", "12345");
+      const existingUser = await userModel.createUserRecord(
+        "someUsername",
+        "12345",
+      );
 
-      const doesExist = await userModel.getOrCreateUserRecord("someUsername", "54321");
+      const doesExist = await userModel.getOrCreateUserRecord(
+        "someUsername",
+        "54321",
+      );
 
       expect(doesExist).toBeDefined();
       expect(doesExist.id).toBe(existingUser.id);
@@ -122,9 +134,13 @@ describe("userModel queries", () => {
 
       const createdUser = await userModel.createUserRecord("bodi", "12345");
 
-      const updatedUser = await userModel.updateUserRecordLastSeen(createdUser.id);
+      const updatedUser = await userModel.updateUserRecordLastSeen(
+        createdUser.id,
+      );
 
-      expect(updatedUser.lastSeen.getTime()).toBeGreaterThan(createdUser.lastSeen.getTime());
+      expect(updatedUser.lastSeen.getTime()).toBeGreaterThan(
+        createdUser.lastSeen.getTime(),
+      );
     });
   });
 });

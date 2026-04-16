@@ -1,4 +1,4 @@
-import { Prisma } from "../generated/prisma/index.js";
+import { Prisma } from "../generated/prisma/client.js";
 import * as friendshipModel from "../models/friendshipModel.js";
 import * as userModel from "../models/userModel.js";
 import type { Request, Response } from "express";
@@ -19,15 +19,13 @@ export async function createFriendRequest(
   );
 
   if (existingFriendRequest) {
-    res
-      .status(409)
-      .json({
-        errors: [
-          {
-            message: `A friend request is already sent by ${existingFriendRequest.sender.username}`,
-          },
-        ],
-      });
+    res.status(409).json({
+      errors: [
+        {
+          message: `A friend request is already sent by ${existingFriendRequest.sender.username}`,
+        },
+      ],
+    });
 
     return;
   }

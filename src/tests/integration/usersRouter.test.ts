@@ -8,7 +8,7 @@ import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import * as messageModel from "../../models/messageModel.js";
 import type ResponseError from "../../types/responseError.js";
-import type { Message, User } from "../../generated/prisma/index.js";
+import type { Message, User } from "../../generated/prisma/client.js";
 import type {
   UploadStream,
   UploadApiOptions,

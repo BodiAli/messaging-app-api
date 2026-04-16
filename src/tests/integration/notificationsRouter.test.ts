@@ -6,7 +6,7 @@ import * as userModel from "../../models/userModel.js";
 import * as friendshipModel from "../../models/friendshipModel.js";
 import * as groupModel from "../../models/groupModel.js";
 import issueJwt from "../../lib/issueJwt.js";
-import type { User } from "../../generated/prisma/index.js";
+import type { User } from "../../generated/prisma/client.js";
 import "../../config/passportConfig.js";
 import type { UserNotifications } from "../../types/userNotifications.js";
 
@@ -43,9 +43,13 @@ describe("notificationsRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedResponseBody = response.body as { notifications: UserNotifications };
+        const typedResponseBody = response.body as {
+          notifications: UserNotifications;
+        };
 
-        expect(typedResponseBody.notifications).toStrictEqual<UserNotifications>([
+        expect(
+          typedResponseBody.notifications,
+        ).toStrictEqual<UserNotifications>([
           {
             id: expect.any(String) as string,
             createdAt: expect.any(String) as Date,
@@ -126,11 +130,21 @@ describe("notificationsRouter routes", () => {
         userB = await userModel.createUserRecord("userB", "12345");
         userC = await userModel.createUserRecord("userC", "12345");
 
-        const userBGroup = await groupModel.createGroup("userB group", userB.id);
-        const userCGroup = await groupModel.createGroup("userC group", userC.id);
+        const userBGroup = await groupModel.createGroup(
+          "userB group",
+          userB.id,
+        );
+        const userCGroup = await groupModel.createGroup(
+          "userC group",
+          userC.id,
+        );
 
-        await groupModel.sendGroupInviteToUsers(userBGroup.id, userB.id, [userA.id]);
-        await groupModel.sendGroupInviteToUsers(userCGroup.id, userC.id, [userA.id]);
+        await groupModel.sendGroupInviteToUsers(userBGroup.id, userB.id, [
+          userA.id,
+        ]);
+        await groupModel.sendGroupInviteToUsers(userCGroup.id, userC.id, [
+          userA.id,
+        ]);
       });
 
       it("should return 200 status with userA's notifications", async () => {
@@ -144,9 +158,13 @@ describe("notificationsRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedResponseBody = response.body as { notifications: UserNotifications };
+        const typedResponseBody = response.body as {
+          notifications: UserNotifications;
+        };
 
-        expect(typedResponseBody.notifications).toStrictEqual<UserNotifications>([
+        expect(
+          typedResponseBody.notifications,
+        ).toStrictEqual<UserNotifications>([
           {
             createdAt: expect.any(String) as Date,
             id: expect.any(String) as string,
@@ -193,7 +211,9 @@ describe("notificationsRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedResponseBody = response.body as { notifications: UserNotifications };
+        const typedResponseBody = response.body as {
+          notifications: UserNotifications;
+        };
 
         expect(typedResponseBody.notifications).toHaveLength(0);
       });
@@ -209,7 +229,9 @@ describe("notificationsRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedResponseBody = response.body as { notifications: UserNotifications };
+        const typedResponseBody = response.body as {
+          notifications: UserNotifications;
+        };
 
         expect(typedResponseBody.notifications).toHaveLength(0);
       });
@@ -225,11 +247,21 @@ describe("notificationsRouter routes", () => {
         userB = await userModel.createUserRecord("userB", "12345");
         userC = await userModel.createUserRecord("userC", "12345");
 
-        const userBGroup = await groupModel.createGroup("userB group", userB.id);
-        const userCGroup = await groupModel.createGroup("userC group", userC.id);
+        const userBGroup = await groupModel.createGroup(
+          "userB group",
+          userB.id,
+        );
+        const userCGroup = await groupModel.createGroup(
+          "userC group",
+          userC.id,
+        );
 
-        await groupModel.sendGroupInviteToUsers(userBGroup.id, userB.id, [userA.id]);
-        await groupModel.sendGroupInviteToUsers(userCGroup.id, userC.id, [userA.id]);
+        await groupModel.sendGroupInviteToUsers(userBGroup.id, userB.id, [
+          userA.id,
+        ]);
+        await groupModel.sendGroupInviteToUsers(userCGroup.id, userC.id, [
+          userA.id,
+        ]);
 
         await friendshipModel.sendFriendRequest(userB.id, userA.id);
         await friendshipModel.sendFriendRequest(userC.id, userA.id);
@@ -246,7 +278,9 @@ describe("notificationsRouter routes", () => {
           .expect("Content-type", /json/)
           .expect(200);
 
-        const typedResponseBody = response.body as { notifications: UserNotifications };
+        const typedResponseBody = response.body as {
+          notifications: UserNotifications;
+        };
 
         expect(typedResponseBody.notifications).toHaveLength(4);
       });

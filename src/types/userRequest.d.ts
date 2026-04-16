@@ -1,4 +1,4 @@
-import type { User as UserRecord } from "../generated/prisma/index.js";
+import type { User as UserRecord } from "../generated/prisma/client.ts";
 
 declare global {
   namespace Express {

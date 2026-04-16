@@ -6,7 +6,11 @@ import * as userModel from "../../models/userModel.js";
 import * as groupModel from "../../models/groupModel.js";
 import issueJwt from "../../lib/issueJwt.js";
 import cloudinary from "../../config/cloudinaryConfig.js";
-import type { GroupChat, Message, User } from "../../generated/prisma/index.js";
+import type {
+  GroupChat,
+  Message,
+  User,
+} from "../../generated/prisma/client.js";
 import type ResponseError from "../../types/responseError.js";
 import type {
   UploadStream,
